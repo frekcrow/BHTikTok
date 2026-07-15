@@ -49,34 +49,28 @@ static BOOL isAuthenticationShowed = FALSE;
 }
 %end
 
-%hook TTKSettingsBaseCellPlugin
-- (void)didSelectItemAtIndex:(NSInteger)index {
-    if ([self.itemModel.identifier isEqualToString:@"bhtiktok_settings"]) {
-        UINavigationController *BHTikTokSettings = [[UINavigationController alloc] initWithRootViewController:[[SettingsViewController alloc] init]];
-        [topMostController() presentViewController:BHTikTokSettings animated:true completion:nil];
-    } else {
-        return %orig;
-    }
-}
-%end
+%hook TTKSettingsViewController
 
-%hook AWESettingsNormalSectionViewModel
 - (void)viewDidLoad {
-    %orig;
-    if ([self.sectionIdentifier isEqualToString:@"account"]) {
-        TTKSettingsBaseCellPlugin *BHTikTokSettingsPluginCell = [[%c(TTKSettingsBaseCellPlugin) alloc] initWithPluginContext:self.context];
-
-        AWESettingItemModel *BHTikTokSettingsItemModel = [[%c(AWESettingItemModel) alloc] initWithIdentifier:@"bhtiktok_settings"];
-        [BHTikTokSettingsItemModel setTitle:@"BHTikTok settings"];
-        [BHTikTokSettingsItemModel setDetail:@"BHTikTok settings"];
-        [BHTikTokSettingsItemModel setIconImage:[UIImage systemImageNamed:@"gear"]];
-        [BHTikTokSettingsItemModel setType:99];
-
-        [BHTikTokSettingsPluginCell setItemModel:BHTikTokSettingsItemModel];
-
-        [self insertModel:BHTikTokSettingsPluginCell atIndex:0 animated:true];
-    }
+    %orig; // السماح لتيك توك بتحميل إعداداته الأصلية أولاً
+    
+    // إنشاء زر إعدادات BHTikTok في الشريط العلوي الأيمن
+    UIBarButtonItem *bhSettingsButton = [[UIBarButtonItem alloc] initWithImage:[UIImage systemImageNamed:@"gear.circle.fill"] style:UIBarButtonItemStylePlain target:self action:@selector(openBHTikTokSettings)];
+    
+    // تغيير لون الزر ليتوافق مع مظهر التطبيق
+    bhSettingsButton.tintColor = [UIColor labelColor]; 
+    
+    // إضافة الزر إلى شريط التنقل
+    self.navigationItem.rightBarButtonItem = bhSettingsButton;
 }
+
+// دالة جديدة لفتح واجهة الأداة عند الضغط على الزر
+%new
+- (void)openBHTikTokSettings {
+    UINavigationController *BHTikTokSettings = [[UINavigationController alloc] initWithRootViewController:[[SettingsViewController alloc] init]];
+    [topMostController() presentViewController:BHTikTokSettings animated:true completion:nil];
+}
+
 %end
 
 %hook SparkViewController // alwaysOpenSafari
