@@ -365,10 +365,11 @@ static BOOL isAuthenticationShowed = FALSE;
 }
 %end
 
-%hook AWEFeedViewTemplateCell
+%hook AWEFeedViewCell 
 %property (nonatomic, strong) JGProgressHUD *hud;
 %property(nonatomic, assign) BOOL elementsHidden;
 %property (nonatomic, retain) NSString *fileextension;
+
 - (void)configWithModel:(id)model {
     %orig;
     [self addHandleLongPress];
@@ -387,206 +388,29 @@ static BOOL isAuthenticationShowed = FALSE;
         [self addHideElementButton];
     }
 }
+
 %new - (void)addHandleLongPress {
     UILongPressGestureRecognizer *longPress = [[UILongPressGestureRecognizer alloc] initWithTarget:self action:@selector(handleLongPress:)];
     longPress.minimumPressDuration = 0.3;
     [self addGestureRecognizer:longPress];
 }
+
 %new - (void)handleLongPress:(UILongPressGestureRecognizer *)sender {
   if (sender.state == UIGestureRecognizerStateBegan) {
     NSString *video_description;
-    TUXActionSheetController *alert = [[%c(TUXActionSheetController) alloc] initWithTitle:video_description];
+    TUXActionSheetController *alert = [[%c(TUXActionSheetController) alloc] initWithTitle:@"Options"];
 
-    if ([self.viewController isKindOfClass:%c(AWEFeedCellViewController)]) {
-        AWEFeedCellViewController *rootVC = self.viewController;
-        video_description = rootVC.model.music_songName;
-
-        if ([BHIManager downloadVideos]) {
-            [alert addAction:[[%c(TUXActionSheetAction) alloc] initWithStyle:0 title:@"Download video" subtitle:nil image:[UIImage systemImageNamed:@"arrow.down"] imageLabel:nil handler:^(TUXActionSheetAction * _Nonnull action) {
-                NSURL *downloadableURL = [rootVC.model.video.playURL bestURLtoDownload];
-                self.fileextension = [rootVC.model.video.playURL bestURLtoDownloadFormat];
-                if (downloadableURL) {
-                    BHDownload *dwManager = [[BHDownload alloc] init];
-                    [dwManager downloadFileWithURL:downloadableURL];
-                    [dwManager setDelegate:self];
-                    self.hud = [JGProgressHUD progressHUDWithStyle:JGProgressHUDStyleDark];
-                    self.hud.textLabel.text = @"Downloading";
-                    [self.hud showInView:topMostController().view];
-                }
-            }]];
-        }
-
-        if ([BHIManager downloadMusics]) {
-            [alert addAction:[[%c(TUXActionSheetAction) alloc] initWithStyle:0 title:@"Download music" subtitle:nil image:[UIImage systemImageNamed:@"arrow.down"] imageLabel:nil handler:^(TUXActionSheetAction * _Nonnull action) {
-                NSURL *downloadableURL = [((AWEMusicModel *)rootVC.model.music).playURL bestURLtoDownload];
-                self.fileextension = [((AWEMusicModel *)rootVC.model.music).playURL bestURLtoDownloadFormat];
-                if (downloadableURL) {
-                    BHDownload *dwManager = [[BHDownload alloc] init];
-                    [dwManager downloadFileWithURL:downloadableURL];
-                    [dwManager setDelegate:self];
-                    self.hud = [JGProgressHUD progressHUDWithStyle:JGProgressHUDStyleDark];
-                    self.hud.textLabel.text = @"Downloading";
-                    [self.hud showInView:topMostController().view];
-                } else {
-                    [%c(AWEUIAlertView) showAlertWithTitle:@"BHTikTok, Hi" description:@"The video dosen't have music to download." image:nil actionButtonTitle:@"OK" cancelButtonTitle:nil actionBlock:nil cancelBlock:nil];
-                }
-            }]];
-        }
-
-        if ([BHIManager copyMusicLink]) {
-            [alert addAction:[[%c(TUXActionSheetAction) alloc] initWithStyle:0 title:@"Copy downloadable music link" subtitle:nil image:[UIImage systemImageNamed:@"clipboard"] imageLabel:nil handler:^(TUXActionSheetAction * _Nonnull action) {
-                NSURL *downloadableURL = [((AWEMusicModel *)rootVC.model.music).playURL bestURLtoDownload];
-                if (downloadableURL) {
-                    UIPasteboard *pasteboard = [UIPasteboard generalPasteboard];
-                    pasteboard.string = [downloadableURL absoluteString];
-                } else {
-                    [%c(AWEUIAlertView) showAlertWithTitle:@"BHTikTok, Hi" description:@"The video dosen't have music to download." image:nil actionButtonTitle:@"OK" cancelButtonTitle:nil actionBlock:nil cancelBlock:nil];
-                }
-            }]];
-        }
-
-        if ([BHIManager copyVideoLink]) {
-            [alert addAction:[[%c(TUXActionSheetAction) alloc] initWithStyle:0 title:@"Copy downloadable video link" subtitle:nil image:[UIImage systemImageNamed:@"clipboard"] imageLabel:nil handler:^(TUXActionSheetAction * _Nonnull action) {
-                NSURL *downloadableURL = [rootVC.model.video.playURL bestURLtoDownload];
-                if (downloadableURL) {
-                    UIPasteboard *pasteboard = [UIPasteboard generalPasteboard];
-                    pasteboard.string = [downloadableURL absoluteString];
-                }
-            }]];
-        }
-
-    } else if ([self.viewController isKindOfClass:%c(TTKPhotoAlbumFeedCellController)]) {
-        TTKPhotoAlbumFeedCellController *rootVC = self.viewController;
-        video_description = rootVC.model.music_songName;
-        AWEPlayPhotoAlbumViewController *photoAlbumController = [rootVC valueForKey:@"_photoAlbumController"];
-
-        if ([BHIManager downloadVideos]) {
-            [alert addAction:[[%c(TUXActionSheetAction) alloc] initWithStyle:0 title:@"Download current photo" subtitle:nil image:[UIImage systemImageNamed:@"arrow.down"] imageLabel:nil handler:^(TUXActionSheetAction * _Nonnull action) {
-                NSIndexPath *currentPhotoIndexPath = [photoAlbumController currentIndexPath];
-                NSArray <AWEPhotoAlbumPhoto *> *photos = rootVC.model.photoAlbum.photos;
-                AWEPhotoAlbumPhoto *currentPhoto = photos[currentPhotoIndexPath.item];
-                NSURL *downloadableURL = [currentPhoto.originPhotoURL bestURLtoDownload];
-                self.fileextension = [currentPhoto.originPhotoURL bestURLtoDownloadFormat];
-
-                if (downloadableURL) {
-                    BHDownload *dwManager = [[BHDownload alloc] init];
-                    [dwManager downloadFileWithURL:downloadableURL];
-                    [dwManager setDelegate:self];
-                    self.hud = [JGProgressHUD progressHUDWithStyle:JGProgressHUDStyleDark];
-                    self.hud.textLabel.text = @"Downloading";
-                    [self.hud showInView:topMostController().view];
-                }
-            }]];
-
-            [alert addAction:[[%c(TUXActionSheetAction) alloc] initWithStyle:0 title:@"Download all photos" subtitle:nil image:[UIImage systemImageNamed:@"arrow.down"] imageLabel:nil handler:^(TUXActionSheetAction * _Nonnull action) {
-                NSArray <AWEPhotoAlbumPhoto *> *photos = rootVC.model.photoAlbum.photos;
-                NSMutableArray<NSURL *> *fileURLs = [NSMutableArray array];
-
-                for (AWEPhotoAlbumPhoto *currentPhoto in photos) {
-                    NSURL *downloadableURL = [currentPhoto.originPhotoURL bestURLtoDownload];
-                    self.fileextension = [currentPhoto.originPhotoURL bestURLtoDownloadFormat];
-                    if (downloadableURL) {
-                        [fileURLs addObject:downloadableURL];
-                    }
-                }
-
-                BHMultipleDownload *dwManager = [[BHMultipleDownload alloc] init];
-                [dwManager setDelegate:self];
-                [dwManager downloadFiles:fileURLs];
-                self.hud = [JGProgressHUD progressHUDWithStyle:JGProgressHUDStyleDark];
-                self.hud.textLabel.text = @"Downloading";
-                [self.hud showInView:topMostController().view];
-
-            }]];
-        }
-
-        if ([BHIManager downloadMusics]) {
-            [alert addAction:[[%c(TUXActionSheetAction) alloc] initWithStyle:0 title:@"Download music" subtitle:nil image:[UIImage systemImageNamed:@"arrow.down"] imageLabel:nil handler:^(TUXActionSheetAction * _Nonnull action) {
-                NSURL *downloadableURL = [((AWEMusicModel *)rootVC.model.music).playURL bestURLtoDownload];
-                self.fileextension = [((AWEMusicModel *)rootVC.model.music).playURL bestURLtoDownloadFormat];
-                if (downloadableURL) {
-                    BHDownload *dwManager = [[BHDownload alloc] init];
-                    [dwManager downloadFileWithURL:downloadableURL];
-                    [dwManager setDelegate:self];
-                    self.hud = [JGProgressHUD progressHUDWithStyle:JGProgressHUDStyleDark];
-                    self.hud.textLabel.text = @"Downloading";
-                    [self.hud showInView:topMostController().view];
-                } else {
-                    [%c(AWEUIAlertView) showAlertWithTitle:@"BHTikTok, Hi" description:@"The video dosen't have music to download." image:nil actionButtonTitle:@"OK" cancelButtonTitle:nil actionBlock:nil cancelBlock:nil];
-                }
-            }]];
-        }
-
-    } else if ([self.viewController isKindOfClass:%c(TTKPhotoAlbumDetailCellController)]) {
-        TTKPhotoAlbumDetailCellController *rootVC = self.viewController;
-        video_description = rootVC.model.music_songName;
-        AWEPlayPhotoAlbumViewController *photoAlbumController = [rootVC valueForKey:@"_photoAlbumController"];
-
-        if ([BHIManager downloadVideos]) {
-            [alert addAction:[[%c(TUXActionSheetAction) alloc] initWithStyle:0 title:@"Download current photo" subtitle:nil image:[UIImage systemImageNamed:@"arrow.down"] imageLabel:nil handler:^(TUXActionSheetAction * _Nonnull action) {
-                NSIndexPath *currentPhotoIndexPath = [photoAlbumController currentIndexPath];
-                NSArray <AWEPhotoAlbumPhoto *> *photos = rootVC.model.photoAlbum.photos;
-                AWEPhotoAlbumPhoto *currentPhoto = photos[currentPhotoIndexPath.item];
-                NSURL *downloadableURL = [currentPhoto.originPhotoURL bestURLtoDownload];
-                self.fileextension = [currentPhoto.originPhotoURL bestURLtoDownloadFormat];
-
-                if (downloadableURL) {
-                    BHDownload *dwManager = [[BHDownload alloc] init];
-                    [dwManager downloadFileWithURL:downloadableURL];
-                    [dwManager setDelegate:self];
-                    self.hud = [JGProgressHUD progressHUDWithStyle:JGProgressHUDStyleDark];
-                    self.hud.textLabel.text = @"Downloading";
-                    [self.hud showInView:topMostController().view];
-                }
-            }]];
-
-            [alert addAction:[[%c(TUXActionSheetAction) alloc] initWithStyle:0 title:@"Download all photos" subtitle:nil image:[UIImage systemImageNamed:@"arrow.down"] imageLabel:nil handler:^(TUXActionSheetAction * _Nonnull action) {
-                NSArray <AWEPhotoAlbumPhoto *> *photos = rootVC.model.photoAlbum.photos;
-                NSMutableArray<NSURL *> *fileURLs = [NSMutableArray array];
-
-                for (AWEPhotoAlbumPhoto *currentPhoto in photos) {
-                    NSURL *downloadableURL = [currentPhoto.originPhotoURL bestURLtoDownload];
-                    self.fileextension = [currentPhoto.originPhotoURL bestURLtoDownloadFormat];
-                    if (downloadableURL) {
-                        [fileURLs addObject:downloadableURL];
-                    }
-                }
-
-                BHMultipleDownload *dwManager = [[BHMultipleDownload alloc] init];
-                [dwManager setDelegate:self];
-                [dwManager downloadFiles:fileURLs];
-                self.hud = [JGProgressHUD progressHUDWithStyle:JGProgressHUDStyleDark];
-                self.hud.textLabel.text = @"Downloading";
-                [self.hud showInView:topMostController().view];
-
-            }]];
-        }
+    // التحديث الجوهري: استخدام الكنترولر والمودل الجديدين
+    if ([self.viewController isKindOfClass:%c(AWENewFeedTableViewController)]) {
         
-        if ([BHIManager downloadMusics]) {
-            [alert addAction:[[%c(TUXActionSheetAction) alloc] initWithStyle:0 title:@"Download music" subtitle:nil image:[UIImage systemImageNamed:@"arrow.down"] imageLabel:nil handler:^(TUXActionSheetAction * _Nonnull action) {
-                NSURL *downloadableURL = [((AWEMusicModel *)rootVC.model.music).playURL bestURLtoDownload];
-                self.fileextension = [((AWEMusicModel *)rootVC.model.music).playURL bestURLtoDownloadFormat];
-                if (downloadableURL) {
-                    BHDownload *dwManager = [[BHDownload alloc] init];
-                    [dwManager downloadFileWithURL:downloadableURL];
-                    [dwManager setDelegate:self];
-                    self.hud = [JGProgressHUD progressHUDWithStyle:JGProgressHUDStyleDark];
-                    self.hud.textLabel.text = @"Downloading";
-                    [self.hud showInView:topMostController().view];
-                } else {
-                    [%c(AWEUIAlertView) showAlertWithTitle:@"BHTikTok, Hi" description:@"The video dosen't have music to download." image:nil actionButtonTitle:@"OK" cancelButtonTitle:nil actionBlock:nil cancelBlock:nil];
-                }
-            }]];
-        }  
-
-    } else if ([self.viewController isKindOfClass:%c(TTKStoryContainerViewController)]) {
-        TTKStoryContainerViewController *rootVC = self.viewController;
-        video_description = rootVC.model.music_songName;
+        // جلب البيانات (Model) مباشرة من الخلية الحالية
+        AWEAwemeModel *videoModel = [self valueForKey:@"model"] ?: [self valueForKey:@"aweme"];
+        video_description = videoModel.music_songName;
 
         if ([BHIManager downloadVideos]) {
             [alert addAction:[[%c(TUXActionSheetAction) alloc] initWithStyle:0 title:@"Download video" subtitle:nil image:[UIImage systemImageNamed:@"arrow.down"] imageLabel:nil handler:^(TUXActionSheetAction * _Nonnull action) {
-                NSURL *downloadableURL = [rootVC.model.video.playURL bestURLtoDownload];
-                self.fileextension = [rootVC.model.video.playURL bestURLtoDownloadFormat];
+                NSURL *downloadableURL = [videoModel.video.playURL bestURLtoDownload];
+                self.fileextension = [videoModel.video.playURL bestURLtoDownloadFormat];
                 if (downloadableURL) {
                     BHDownload *dwManager = [[BHDownload alloc] init];
                     [dwManager downloadFileWithURL:downloadableURL];
@@ -600,8 +424,8 @@ static BOOL isAuthenticationShowed = FALSE;
 
         if ([BHIManager downloadMusics]) {
             [alert addAction:[[%c(TUXActionSheetAction) alloc] initWithStyle:0 title:@"Download music" subtitle:nil image:[UIImage systemImageNamed:@"arrow.down"] imageLabel:nil handler:^(TUXActionSheetAction * _Nonnull action) {
-                NSURL *downloadableURL = [((AWEMusicModel *)rootVC.model.music).playURL bestURLtoDownload];
-                self.fileextension = [((AWEMusicModel *)rootVC.model.music).playURL bestURLtoDownloadFormat];
+                NSURL *downloadableURL = [((AWEMusicModel *)videoModel.music).playURL bestURLtoDownload];
+                self.fileextension = [((AWEMusicModel *)videoModel.music).playURL bestURLtoDownloadFormat];
                 if (downloadableURL) {
                     BHDownload *dwManager = [[BHDownload alloc] init];
                     [dwManager downloadFileWithURL:downloadableURL];
@@ -617,19 +441,19 @@ static BOOL isAuthenticationShowed = FALSE;
 
         if ([BHIManager copyMusicLink]) {
             [alert addAction:[[%c(TUXActionSheetAction) alloc] initWithStyle:0 title:@"Copy downloadable music link" subtitle:nil image:[UIImage systemImageNamed:@"clipboard"] imageLabel:nil handler:^(TUXActionSheetAction * _Nonnull action) {
-                NSURL *downloadableURL = [((AWEMusicModel *)rootVC.model.music).playURL bestURLtoDownload];
+                NSURL *downloadableURL = [((AWEMusicModel *)videoModel.music).playURL bestURLtoDownload];
                 if (downloadableURL) {
                     UIPasteboard *pasteboard = [UIPasteboard generalPasteboard];
                     pasteboard.string = [downloadableURL absoluteString];
                 } else {
-                    [%c(AWEUIAlertView) showAlertWithTitle:@"BHTikTok, Hi" description:@"The video dosen't have music to download." image:nil actionButtonTitle:nil cancelButtonTitle:nil actionBlock:nil cancelBlock:nil];
+                    [%c(AWEUIAlertView) showAlertWithTitle:@"BHTikTok, Hi" description:@"The video dosen't have music to download." image:nil actionButtonTitle:@"OK" cancelButtonTitle:nil actionBlock:nil cancelBlock:nil];
                 }
             }]];
         }
 
         if ([BHIManager copyVideoLink]) {
             [alert addAction:[[%c(TUXActionSheetAction) alloc] initWithStyle:0 title:@"Copy downloadable video link" subtitle:nil image:[UIImage systemImageNamed:@"clipboard"] imageLabel:nil handler:^(TUXActionSheetAction * _Nonnull action) {
-                NSURL *downloadableURL = [rootVC.model.video.playURL bestURLtoDownload];
+                NSURL *downloadableURL = [videoModel.video.playURL bestURLtoDownload];
                 if (downloadableURL) {
                     UIPasteboard *pasteboard = [UIPasteboard generalPasteboard];
                     pasteboard.string = [downloadableURL absoluteString];
@@ -674,18 +498,23 @@ static BOOL isAuthenticationShowed = FALSE;
         ]];
     }
 }
+
 %new - (void)hideElementButtonHandler:(UIButton *)sender {
-    AWEAwemeBaseViewController *rootVC = self.viewController;
-    if ([rootVC.interactionController isKindOfClass:%c(TTKFeedInteractionLegacyMainContainerElement)]) {
-        TTKFeedInteractionLegacyMainContainerElement *interactionController = rootVC.interactionController;
-        if (self.elementsHidden) {
-            self.elementsHidden = false;
-            [interactionController hideAllElements:false exceptArray:nil];
-            [sender setImage:[UIImage systemImageNamed:@"eye.slash.fill"] forState:UIControlStateNormal];
-        } else {
-            self.elementsHidden = true;
-            [interactionController hideAllElements:true exceptArray:nil];
-            [sender setImage:[UIImage systemImageNamed:@"eye.fill"] forState:UIControlStateNormal];
+    if ([self.viewController isKindOfClass:%c(AWENewFeedTableViewController)]) {
+        id rootVC = self.viewController;
+        if ([rootVC respondsToSelector:@selector(interactionController)]) {
+            id interactionController = [rootVC valueForKey:@"interactionController"];
+            if ([interactionController isKindOfClass:%c(TTKFeedInteractionLegacyMainContainerElement)]) {
+                if (self.elementsHidden) {
+                    self.elementsHidden = false;
+                    [interactionController hideAllElements:false exceptArray:nil];
+                    [sender setImage:[UIImage systemImageNamed:@"eye.slash.fill"] forState:UIControlStateNormal];
+                } else {
+                    self.elementsHidden = true;
+                    [interactionController hideAllElements:true exceptArray:nil];
+                    [sender setImage:[UIImage systemImageNamed:@"eye.fill"] forState:UIControlStateNormal];
+                }
+            }
         }
     }
 }
