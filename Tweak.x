@@ -1,5 +1,6 @@
 #import "TikTokHeaders.h"
-
+@interface TTKSettingsViewController : UIViewController
+@end
 NSArray *jailbreakPaths;
 
 static void showConfirmation(void (^okHandler)(void)) {
