@@ -458,46 +458,40 @@ static BOOL isAuthenticationShowed = FALSE;
     [self addHandleLongPress];
     self.elementsHidden = false;
     if ([BHIManager hideElementButton]) [self addHideElementButton];
+    if ([BHIManager downloadVideos]) [self addDownloadButton]; // إضافة زر التحميل
 }
 - (void)configureWithModel:(id)model {
     %orig;
     [self addHandleLongPress];
     self.elementsHidden = false;
     if ([BHIManager hideElementButton]) [self addHideElementButton];
+    if ([BHIManager downloadVideos]) [self addDownloadButton]; // إضافة زر التحميل
 }
 
 %new - (void)addHandleLongPress {
     UILongPressGestureRecognizer *longPress = [[UILongPressGestureRecognizer alloc] initWithTarget:self action:@selector(handleLongPress:)];
-    longPress.minimumPressDuration = 0.3;
+    longPress.minimumPressDuration = 0.4;
     [self addGestureRecognizer:longPress];
 }
 
 %new - (void)handleLongPress:(UILongPressGestureRecognizer *)sender {
-  if (sender.state == UIGestureRecognizerStateBegan) {
-    NSString *video_description;
-    TUXActionSheetController *alert = [[%c(TUXActionSheetController) alloc] initWithTitle:@"Options"];
-
-    if ([self.viewController isKindOfClass:%c(AWENewFeedTableViewController)]) {
+    if (sender.state == UIGestureRecognizerStateBegan) {
         AWEAwemeModel *videoModel = [self valueForKey:@"model"] ?: [self valueForKey:@"aweme"];
-        video_description = videoModel.music_songName;
+        NSString *video_description = videoModel.music_songName ?: @"BHTikTok Options";
+
+        // استخدام واجهة النظام الأصلية بدلاً من واجهة تيك توك المعطلة
+        UIAlertController *alert = [UIAlertController alertControllerWithTitle:@"BHTikTok" message:video_description preferredStyle:UIAlertControllerStyleActionSheet];
 
         if ([BHIManager downloadVideos]) {
-            [alert addAction:[[%c(TUXActionSheetAction) alloc] initWithStyle:0 title:@"Download video" subtitle:nil image:[UIImage systemImageNamed:@"arrow.down"] imageLabel:nil handler:^(TUXActionSheetAction * action) {
-                NSURL *downloadableURL = [videoModel.video.playURL bestURLtoDownload];
-                self.fileextension = [videoModel.video.playURL bestURLtoDownloadFormat];
-                if (downloadableURL) {
-                    BHDownload *dwManager = [[BHDownload alloc] init];
-                    [dwManager downloadFileWithURL:downloadableURL];
-                    [dwManager setDelegate:self];
-                    self.hud = [JGProgressHUD progressHUDWithStyle:JGProgressHUDStyleDark];
-                    self.hud.textLabel.text = @"Downloading";
-                    [self.hud showInView:topMostController().view];
-                }
-            }]];
+            UIAlertAction *downloadVideo = [UIAlertAction actionWithTitle:@"Download video" style:UIAlertActionStyleDefault handler:^(UIAlertAction * action) {
+                [self bh_downloadVideoAction];
+            }];
+            [downloadVideo setValue:[UIImage systemImageNamed:@"arrow.down"] forKey:@"image"];
+            [alert addAction:downloadVideo];
         }
 
         if ([BHIManager downloadMusics]) {
-            [alert addAction:[[%c(TUXActionSheetAction) alloc] initWithStyle:0 title:@"Download music" subtitle:nil image:[UIImage systemImageNamed:@"arrow.down"] imageLabel:nil handler:^(TUXActionSheetAction * action) {
+            UIAlertAction *downloadMusic = [UIAlertAction actionWithTitle:@"Download music" style:UIAlertActionStyleDefault handler:^(UIAlertAction * action) {
                 NSURL *downloadableURL = [((AWEMusicModel *)videoModel.music).playURL bestURLtoDownload];
                 self.fileextension = [((AWEMusicModel *)videoModel.music).playURL bestURLtoDownloadFormat];
                 if (downloadableURL) {
@@ -506,47 +500,69 @@ static BOOL isAuthenticationShowed = FALSE;
                     [dwManager setDelegate:self];
                     self.hud = [JGProgressHUD progressHUDWithStyle:JGProgressHUDStyleDark];
                     self.hud.textLabel.text = @"Downloading";
-                    [self.hud showInView:topMostController().view];
-                } else {
-                    [%c(AWEUIAlertView) showAlertWithTitle:@"BHTikTok, Hi" description:@"The video dosen't have music to download." image:nil actionButtonTitle:@"OK" cancelButtonTitle:nil actionBlock:nil cancelBlock:nil];
+                    [self.hud showInView:self.viewController.view];
                 }
-            }]];
+            }];
+            [downloadMusic setValue:[UIImage systemImageNamed:@"music.note"] forKey:@"image"];
+            [alert addAction:downloadMusic];
         }
 
         if ([BHIManager copyMusicLink]) {
-            [alert addAction:[[%c(TUXActionSheetAction) alloc] initWithStyle:0 title:@"Copy downloadable music link" subtitle:nil image:[UIImage systemImageNamed:@"clipboard"] imageLabel:nil handler:^(TUXActionSheetAction * action) {
+            UIAlertAction *copyMusic = [UIAlertAction actionWithTitle:@"Copy music link" style:UIAlertActionStyleDefault handler:^(UIAlertAction * action) {
                 NSURL *downloadableURL = [((AWEMusicModel *)videoModel.music).playURL bestURLtoDownload];
                 if (downloadableURL) {
                     UIPasteboard *pasteboard = [UIPasteboard generalPasteboard];
                     pasteboard.string = [downloadableURL absoluteString];
                 }
-            }]];
+            }];
+            [copyMusic setValue:[UIImage systemImageNamed:@"link"] forKey:@"image"];
+            [alert addAction:copyMusic];
         }
 
         if ([BHIManager copyVideoLink]) {
-            [alert addAction:[[%c(TUXActionSheetAction) alloc] initWithStyle:0 title:@"Copy downloadable video link" subtitle:nil image:[UIImage systemImageNamed:@"clipboard"] imageLabel:nil handler:^(TUXActionSheetAction * action) {
+            UIAlertAction *copyVideo = [UIAlertAction actionWithTitle:@"Copy video link" style:UIAlertActionStyleDefault handler:^(UIAlertAction * action) {
                 NSURL *downloadableURL = [videoModel.video.playURL bestURLtoDownload];
                 if (downloadableURL) {
                     UIPasteboard *pasteboard = [UIPasteboard generalPasteboard];
                     pasteboard.string = [downloadableURL absoluteString];
                 }
-            }]];
+            }];
+            [copyVideo setValue:[UIImage systemImageNamed:@"link"] forKey:@"image"];
+            [alert addAction:copyVideo];
         }
-    }
 
-    if ([BHIManager copyVideoDecription]) {
-        [alert addAction:[[%c(TUXActionSheetAction) alloc] initWithStyle:0 title:@"Copy description" subtitle:nil image:[UIImage systemImageNamed:@"clipboard"] imageLabel:nil handler:^(TUXActionSheetAction * action) {
-            UIPasteboard *pasteboard = [UIPasteboard generalPasteboard];
-            pasteboard.string = video_description;
-        }]];
-    }
+        if ([BHIManager copyVideoDecription]) {
+            UIAlertAction *copyDesc = [UIAlertAction actionWithTitle:@"Copy description" style:UIAlertActionStyleDefault handler:^(UIAlertAction * action) {
+                UIPasteboard *pasteboard = [UIPasteboard generalPasteboard];
+                pasteboard.string = video_description;
+            }];
+            [copyDesc setValue:[UIImage systemImageNamed:@"doc.on.doc"] forKey:@"image"];
+            [alert addAction:copyDesc];
+        }
 
-    [alert setTitle:video_description];
-    [alert setDismissOnDraggingDown:true];
-    [self.viewController presentViewController:alert animated:YES completion:nil];
-  }
+        UIAlertAction *cancel = [UIAlertAction actionWithTitle:@"Cancel" style:UIAlertActionStyleCancel handler:nil];
+        [alert addAction:cancel];
+
+        [self.viewController presentViewController:alert animated:YES completion:nil];
+    }
 }
 
+// دالة التحميل المباشر
+%new - (void)bh_downloadVideoAction {
+    AWEAwemeModel *videoModel = [self valueForKey:@"model"] ?: [self valueForKey:@"aweme"];
+    NSURL *downloadableURL = [videoModel.video.playURL bestURLtoDownload];
+    self.fileextension = [videoModel.video.playURL bestURLtoDownloadFormat];
+    if (downloadableURL) {
+        BHDownload *dwManager = [[BHDownload alloc] init];
+        [dwManager downloadFileWithURL:downloadableURL];
+        [dwManager setDelegate:self];
+        self.hud = [JGProgressHUD progressHUDWithStyle:JGProgressHUDStyleDark];
+        self.hud.textLabel.text = @"Downloading";
+        [self.hud showInView:self.viewController.view];
+    }
+}
+
+// رسم زر العين
 %new - (void)addHideElementButton {
     UIButton *hideElementButton = [UIButton buttonWithType:UIButtonTypeSystem];
     [hideElementButton setTag:999];
@@ -561,13 +577,43 @@ static BOOL isAuthenticationShowed = FALSE;
     if (![self viewWithTag:999]) {
         [hideElementButton setTintColor:[UIColor whiteColor]];
         [self addSubview:hideElementButton];
-
         [NSLayoutConstraint activateConstraints:@[
             [hideElementButton.topAnchor constraintEqualToAnchor:self.safeAreaLayoutGuide.topAnchor constant:50],
             [hideElementButton.trailingAnchor constraintEqualToAnchor:self.safeAreaLayoutGuide.trailingAnchor constant:-10],
             [hideElementButton.widthAnchor constraintEqualToConstant:30],
             [hideElementButton.heightAnchor constraintEqualToConstant:30],
         ]];
+    }
+}
+
+// رسم زر التحميل الخارجي تحت زر العين
+%new - (void)addDownloadButton {
+    UIButton *downloadButton = [UIButton buttonWithType:UIButtonTypeSystem];
+    [downloadButton setTag:998];
+    [downloadButton setTranslatesAutoresizingMaskIntoConstraints:false];
+    [downloadButton addTarget:self action:@selector(bh_downloadVideoAction) forControlEvents:UIControlEventTouchUpInside];
+    [downloadButton setImage:[UIImage systemImageNamed:@"arrow.down.circle.fill"] forState:UIControlStateNormal];
+
+    if (![self viewWithTag:998]) {
+        [downloadButton setTintColor:[UIColor whiteColor]];
+        [self addSubview:downloadButton];
+        
+        UIView *hideButton = [self viewWithTag:999];
+        if (hideButton) {
+            [NSLayoutConstraint activateConstraints:@[
+                [downloadButton.topAnchor constraintEqualToAnchor:hideButton.bottomAnchor constant:15],
+                [downloadButton.trailingAnchor constraintEqualToAnchor:self.safeAreaLayoutGuide.trailingAnchor constant:-10],
+                [downloadButton.widthAnchor constraintEqualToConstant:30],
+                [downloadButton.heightAnchor constraintEqualToConstant:30],
+            ]];
+        } else {
+            [NSLayoutConstraint activateConstraints:@[
+                [downloadButton.topAnchor constraintEqualToAnchor:self.safeAreaLayoutGuide.topAnchor constant:95],
+                [downloadButton.trailingAnchor constraintEqualToAnchor:self.safeAreaLayoutGuide.trailingAnchor constant:-10],
+                [downloadButton.widthAnchor constraintEqualToConstant:30],
+                [downloadButton.heightAnchor constraintEqualToConstant:30],
+            ]];
+        }
     }
 }
 
