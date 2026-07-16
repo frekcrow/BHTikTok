@@ -288,20 +288,19 @@ static BOOL isAuthenticationShowed = FALSE;
 - (id)initWithFrame:(CGRect)arg1 {
     self = %orig;
     if ([BHIManager profileCopy]) {
-        [self addHandleLongPress];
+        [self performSelector:@selector(addHandleLongPress)];
     }
     return self;
 }
 %new - (void)addHandleLongPress {
     UILongPressGestureRecognizer *longPress = [[UILongPressGestureRecognizer alloc] initWithTarget:self action:@selector(handleLongPress:)];
     longPress.minimumPressDuration = 0.3;
-    [self addGestureRecognizer:longPress];
+    [((UIView *)self) addGestureRecognizer:longPress];
 }
 %new - (void)handleLongPress:(UILongPressGestureRecognizer *)sender {
     if (sender.state == UIGestureRecognizerStateBegan) {
         
-        // جلب بيانات المستخدم بذكاء من الكنترولر الجديد أو من الـ View نفسه
-        id rootVC = self.yy_viewController;
+        id rootVC = [self valueForKey:@"yy_viewController"];
         AWEUserModel *userModel = nil;
         
         if ([rootVC respondsToSelector:@selector(user)]) {
@@ -348,7 +347,7 @@ static BOOL isAuthenticationShowed = FALSE;
 
             [alert setTitle:@"Select option to copy."];
             [alert setDismissOnDraggingDown:true];
-            [self.yy_viewController presentViewController:alert animated:YES completion:nil];
+            [((UIViewController *)rootVC) presentViewController:alert animated:YES completion:nil];
         }
     }
 }
@@ -359,7 +358,7 @@ static BOOL isAuthenticationShowed = FALSE;
 - (void)viewDidLoad {
     %orig;
     if ([BHIManager profileSave]) {
-        [self addHandleLongPress];
+        [self performSelector:@selector(addHandleLongPress)];
     }
 }
 
@@ -368,18 +367,13 @@ static BOOL isAuthenticationShowed = FALSE;
     UILongPressGestureRecognizer *longPress = [[UILongPressGestureRecognizer alloc] initWithTarget:self action:@selector(handleLongPress:)];
     longPress.minimumPressDuration = 0.3;
     
-    // إضافة الإيماءة إلى الواجهة الرئيسية للكنترولر
-    [self.view addGestureRecognizer:longPress];
+    [((UIViewController *)self).view addGestureRecognizer:longPress];
 }
 
 %new 
 - (void)handleLongPress:(UILongPressGestureRecognizer *)sender {
     if (sender.state == UIGestureRecognizerStateBegan) {
-        
-        // جلب ImageView الذي اكتشفته أنت باستخدام FLEX
         UIImageView *imageView = [self valueForKey:@"avatarImageView"];
-        
-        // التأكد من وجود الصورة قبل حفظها لتجنب أي انهيار (Crash)
         if (imageView && imageView.image) {
             [BHIManager showSaveVC:@[imageView.image]];
         }
