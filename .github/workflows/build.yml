@@ -1,6 +1,5 @@
 name: Build BHTikTok Tweak
 
-# هذا الأمر هو ما يضمن عدم تشغيل البناء إلا عند ضغطك على الزر يدوياً
 on:
   workflow_dispatch:
 
@@ -26,6 +25,7 @@ jobs:
 
       - name: Download Patched iOS SDKs
         run: |
+          rm -rf $HOME/theos/sdks
           git clone https://github.com/theos/sdks.git $HOME/theos/sdks
 
       - name: Compile and Build Package
