@@ -280,7 +280,7 @@ static BOOL isAuthenticationShowed = FALSE;
 }
 %end
 
-%hook TIKTOKProfileHeaderView // copy profile information
+%hook TTKProfileHeaderView // copy profile information
 - (id)initWithFrame:(CGRect)arg1 {
     self = %orig;
     if ([BHIManager profileCopy]) {
@@ -295,36 +295,47 @@ static BOOL isAuthenticationShowed = FALSE;
 }
 %new - (void)handleLongPress:(UILongPressGestureRecognizer *)sender {
     if (sender.state == UIGestureRecognizerStateBegan) {
-        if ([self.yy_viewController isKindOfClass:%c(TIKTOKProfileHeaderViewController)]) {
-            TIKTOKProfileHeaderViewController *rootVC = self.yy_viewController;
+        
+        // جلب بيانات المستخدم بذكاء من الكنترولر الجديد أو من الـ View نفسه
+        id rootVC = self.yy_viewController;
+        AWEUserModel *userModel = nil;
+        
+        if ([rootVC respondsToSelector:@selector(user)]) {
+            userModel = [rootVC valueForKey:@"user"];
+        } else if ([self respondsToSelector:@selector(user)]) {
+            userModel = [self valueForKey:@"user"];
+        }
+
+        if (userModel) {
             TUXActionSheetController *alert = [[%c(TUXActionSheetController) alloc] initWithTitle:@"Select option to copy."];
-            if (rootVC.user.socialName) {
-                NSString *accountName = rootVC.user.socialName;
-                [alert addAction:[[%c(TUXActionSheetAction) alloc] initWithStyle:0 title:@"Copy soical name" subtitle:accountName image:[UIImage systemImageNamed:@"clipboard"] imageLabel:nil handler:^(TUXActionSheetAction * _Nonnull action) {
+            
+            if (userModel.socialName) {
+                NSString *accountName = userModel.socialName;
+                [alert addAction:[[%c(TUXActionSheetAction) alloc] initWithStyle:0 title:@"Copy social name" subtitle:accountName image:[UIImage systemImageNamed:@"clipboard"] imageLabel:nil handler:^(TUXActionSheetAction * _Nonnull action) {
                     UIPasteboard *pasteboard = [UIPasteboard generalPasteboard];
                     pasteboard.string = accountName;
                     [%c(AWEToast) showSuccess:@"Copied"];
                 }]];
             }
-            if (rootVC.user.nickname) {
-                NSString *nickName = rootVC.user.nickname;
+            if (userModel.nickname) {
+                NSString *nickName = userModel.nickname;
                 [alert addAction:[[%c(TUXActionSheetAction) alloc] initWithStyle:0 title:@"Copy nick name" subtitle:nickName image:[UIImage systemImageNamed:@"clipboard"] imageLabel:nil handler:^(TUXActionSheetAction * _Nonnull action) {
                     UIPasteboard *pasteboard = [UIPasteboard generalPasteboard];
                     pasteboard.string = nickName;
                     [%c(AWEToast) showSuccess:@"Copied"];
                 }]];
             }
-            if (rootVC.user.signature) {
-                NSString *bio = rootVC.user.signature;
+            if (userModel.signature) {
+                NSString *bio = userModel.signature;
                 [alert addAction:[[%c(TUXActionSheetAction) alloc] initWithStyle:0 title:@"Copy bio" subtitle:nil image:[UIImage systemImageNamed:@"clipboard"] imageLabel:nil handler:^(TUXActionSheetAction * _Nonnull action) {
                     UIPasteboard *pasteboard = [UIPasteboard generalPasteboard];
                     pasteboard.string = bio;
                     [%c(AWEToast) showSuccess:@"Copied"];
                 }]];
             }
-            if (rootVC.user.bioUrl) {
-                NSString *bioURL = rootVC.user.bioUrl;
-                [alert addAction:[[%c(TUXActionSheetAction) alloc] initWithStyle:0 title:@"Copy URL inbio" subtitle:bioURL image:[UIImage systemImageNamed:@"clipboard"] imageLabel:nil handler:^(TUXActionSheetAction * _Nonnull action) {
+            if (userModel.bioUrl) {
+                NSString *bioURL = userModel.bioUrl;
+                [alert addAction:[[%c(TUXActionSheetAction) alloc] initWithStyle:0 title:@"Copy URL in bio" subtitle:bioURL image:[UIImage systemImageNamed:@"clipboard"] imageLabel:nil handler:^(TUXActionSheetAction * _Nonnull action) {
                     UIPasteboard *pasteboard = [UIPasteboard generalPasteboard];
                     pasteboard.string = bioURL;
                     [%c(AWEToast) showSuccess:@"Copied"];
