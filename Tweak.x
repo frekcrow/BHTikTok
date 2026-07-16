@@ -95,18 +95,51 @@ static BOOL isAuthenticationShowed = FALSE;
 }
 %end
 
-%hook TTKSettingsViewController
-- (void)viewDidLoad {
-    %orig; 
-    UIBarButtonItem *bhSettingsButton = [[UIBarButtonItem alloc] initWithImage:[UIImage systemImageNamed:@"gear.circle.fill"] style:UIBarButtonItemStylePlain target:self action:@selector(openBHTikTokSettings)];
-    bhSettingsButton.tintColor = [UIColor labelColor]; 
-    self.navigationItem.rightBarButtonItem = bhSettingsButton;
+%hook TTKTabBarButton
+
+- (void)layoutSubviews {
+    %orig;
+    
+    // 1. التحقق من أننا لم نضف الإيماءة مسبقاً لتجنب التكرار والتسبب في كراش
+    BOOL hasLongPress = NO;
+    for (UIGestureRecognizer *recognizer in self.gestureRecognizers) {
+        if ([recognizer isKindOfClass:[UILongPressGestureRecognizer class]]) {
+            hasLongPress = YES;
+            break;
+        }
+    }
+    
+    // 2. إذا لم تكن الإيماءة موجودة، نقوم بإنشائها
+    if (!hasLongPress) {
+        // نستخدم الـ accessibilityLabel الذي استخرجته من FLEX لتمييز زر الملف الشخصي
+        NSString *label = self.accessibilityLabel;
+        
+        // وضعنا عدة احتمالات للغات المختلفة (عربي/إنجليزي) لضمان عملها دائماً
+        if ([label containsString:@"Profile"] || [label containsString:@"الملف الشخصي"] || [label containsString:@"Me"] || [label containsString:@"أنا"]) {
+            
+            UILongPressGestureRecognizer *longPress = [[UILongPressGestureRecognizer alloc] initWithTarget:self action:@selector(bh_openSettings:)];
+            longPress.minimumPressDuration = 0.5; // نصف ثانية من الضغط المستمر
+            [self addGestureRecognizer:longPress];
+        }
+    }
 }
+
+// 3. الدالة التي سيتم تنفيذها عند الضغط المطول
 %new
-- (void)openBHTikTokSettings {
-    UINavigationController *BHTikTokSettings = [[UINavigationController alloc] initWithRootViewController:[[SettingsViewController alloc] init]];
-    [topMostController() presentViewController:BHTikTokSettings animated:true completion:nil];
+- (void)bh_openSettings:(UILongPressGestureRecognizer *)sender {
+    // نتأكد أن الحدث يتم تنفيذه مرة واحدة عند بداية الضغط
+    if (sender.state == UIGestureRecognizerStateBegan) {
+        // تجهيز واجهة الإعدادات الخاصة بنا
+        UINavigationController *BHTikTokSettings = [[UINavigationController alloc] initWithRootViewController:[[SettingsViewController alloc] init]];
+        
+        // استخدام الدالة المساعدة لجلب الواجهة الحالية المفتوحة
+        UIViewController *topVC = topMostController();
+        
+        // إظهار واجهة الإعدادات بانزلاق أنيق من الأسفل
+        [topVC presentViewController:BHTikTokSettings animated:YES completion:nil];
+    }
 }
+
 %end
 
 %hook SparkViewController 
