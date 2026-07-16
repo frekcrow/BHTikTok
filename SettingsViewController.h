@@ -13,6 +13,9 @@
 #import <Preferences/PSSpecifier.h>
 #import <Preferences/PSEditableTableCell.h>
 #import <Preferences/PSSwitchTableCell.h>
+@interface PSSpecifier (BHTikTok_Fix)
+- (void)setValues:(id)values titles:(id)titles;
+@end
 
 typedef NS_ENUM(NSInteger, DynamicSpecifierOperatorType) {
   EqualToOperatorType,
