@@ -18,22 +18,27 @@
 - (void)addHandleLongPress;
 @end
 
-@interface AWEFeedVideoButton : UIButton
-@property (nonatomic, strong) NSString *imageNameString;
-- (void)_onTouchUpInside;
-@end
-
-@interface AWECommentPanelCell : UITableViewCell
-- (void)likeButtonTapped;
-- (void)dislikeButtonTapped;
-@end
-
+// كلاسات غير موجودة في الهيدرات الأصلية (نعرفها بالكامل مع خصائصنا)
 @interface TIKTOKProfileHeaderExtraViewController : UIViewController
+@property (nonatomic, assign) BOOL bh_confirmed;
 - (void)relationBtnClicked:(id)arg1;
 @end
 
 @interface AWEPlayInteractionUserAvatarElement : NSObject
+@property (nonatomic, assign) BOOL bh_confirmed;
 - (void)onFollowViewClicked:(id)arg1;
+@end
+
+@interface AWECommentPanelCell : UITableViewCell
+@property (nonatomic, assign) BOOL bh_like_confirmed;
+@property (nonatomic, assign) BOOL bh_dislike_confirmed;
+- (void)likeButtonTapped;
+- (void)dislikeButtonTapped;
+@end
+
+// كلاس موجود في الهيدرات الأصلية (نستخدم Category لإضافة خصائصنا فقط)
+@interface AWEFeedVideoButton (BHTikTok)
+@property (nonatomic, assign) BOOL bh_confirmed;
 @end
 
 NSArray *jailbreakPaths;
