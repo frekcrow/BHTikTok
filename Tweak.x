@@ -1,6 +1,11 @@
 #import "TikTokHeaders.h"
 @interface TTKSettingsViewController : UIViewController
 @end
+@interface TTKProfileHeaderView : UIView
+@property (nonatomic, weak) UIViewController *yy_viewController;
+@end
+@interface TTKEnlargeAvatarViewController : UIViewController
+@end
 NSArray *jailbreakPaths;
 
 static void showConfirmation(void (^okHandler)(void)) {
