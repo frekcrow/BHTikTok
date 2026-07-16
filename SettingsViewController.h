@@ -7,8 +7,6 @@
 
 #import <UIKit/UIKit.h>
 #import <Foundation/Foundation.h>
-#import <CepheiPrefs/CepheiPrefs.h>
-#import <Cephei/HBPreferences.h>
 #import <Preferences/PSListController.h>
 #import <Preferences/PSSpecifier.h>
 #import <Preferences/PSEditableTableCell.h>
