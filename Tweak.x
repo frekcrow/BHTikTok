@@ -1,12 +1,7 @@
 #import "TikTokHeaders.h"
 #import <UIKit/UIKit.h>
 #import <Foundation/Foundation.h>
-
-// ==========================================
-// 1. تعريفات الكلاسات لتجنب أخطاء المترجم
-// ==========================================
-
-@interface TTKSettingsViewController : UIViewController
+@interface TTKTabBarButton : UIControl
 @end
 
 @interface TTKProfileHeaderView : UIView
