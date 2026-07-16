@@ -24,14 +24,10 @@
     self.title = @"BHTikTok";
 
     if (self.traitCollection.userInterfaceStyle == UIUserInterfaceStyleDark) {
-        HBAppearanceSettings *appearanceSettings = [[HBAppearanceSettings alloc] init];
-        appearanceSettings.tableViewBackgroundColor = [UIColor blackColor];
-        appearanceSettings.tableViewCellBackgroundColor = [UIColor colorWithRed: 25.0/255.0 green: 25.0/255.0 blue: 25.0/255.0 alpha: 1.0];
-        self.hb_appearanceSettings = appearanceSettings;
+        
     } else {
-        HBAppearanceSettings *appearanceSettings = [[HBAppearanceSettings alloc] init];
-        appearanceSettings.tableViewCellBackgroundColor = [UIColor whiteColor];
-        self.hb_appearanceSettings = appearanceSettings;
+        
+        
     }
 }
 
@@ -47,18 +43,12 @@
 
 - (void)updateColorsForCurrentTraitCollection {
     if (self.traitCollection.userInterfaceStyle == UIUserInterfaceStyleDark) {
-        HBAppearanceSettings *appearanceSettings = [[HBAppearanceSettings alloc] init];
-        appearanceSettings.tableViewBackgroundColor = [UIColor blackColor];
-        appearanceSettings.tableViewCellBackgroundColor = [UIColor colorWithRed: 25.0/255.0 green: 25.0/255.0 blue: 25.0/255.0 alpha: 1.0];
-        self.hb_appearanceSettings = appearanceSettings;
+        
         dispatch_async(dispatch_get_main_queue(), ^{
             [self.tableView reloadData];
         });
     } else {
-        HBAppearanceSettings *appearanceSettings = [[HBAppearanceSettings alloc] init];
-        appearanceSettings.tableViewBackgroundColor = [UIColor systemBackgroundColor];
-        appearanceSettings.tableViewCellBackgroundColor = [UIColor whiteColor];
-        self.hb_appearanceSettings = appearanceSettings;
+        
         dispatch_async(dispatch_get_main_queue(), ^{
             [self.tableView reloadData];
         });
