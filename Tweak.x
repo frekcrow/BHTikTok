@@ -563,27 +563,42 @@ static BOOL isAuthenticationShowed = FALSE;
 }
 
 // رسم زر العين
-%new - (void)addHideElementButton {
-    UIButton *hideElementButton = [UIButton buttonWithType:UIButtonTypeSystem];
-    [hideElementButton setTag:999];
-    [hideElementButton setTranslatesAutoresizingMaskIntoConstraints:false];
-    [hideElementButton addTarget:self action:@selector(hideElementButtonHandler:) forControlEvents:UIControlEventTouchUpInside];
-    if (self.elementsHidden) {
-        [hideElementButton setImage:[UIImage systemImageNamed:@"eye.fill"] forState:UIControlStateNormal];
-    } else {
-        [hideElementButton setImage:[UIImage systemImageNamed:@"eye.slash.fill"] forState:UIControlStateNormal];
+%new - (void)hideElementButtonHandler:(UIButton *)sender {
+    // 1. عكس حالة الإخفاء الحالية (إذا كانت ظاهرة نخفيها والعكس)
+    self.elementsHidden = !self.elementsHidden;
+    
+    // 2. تحديث أيقونة زر العين استجابةً للضغطة
+    [sender setImage:[UIImage systemImageNamed:self.elementsHidden ? @"eye.fill" : @"eye.slash.fill"] forState:UIControlStateNormal];
+    
+    // 3. الطريقة الأولى (الناعمة): محاولة استخدام نظام إخفاء تيك توك المدمج ديناميكياً
+    id rootVC = [self respondsToSelector:@selector(viewController)] ? [self valueForKey:@"viewController"] : nil;
+    
+    if (rootVC && [rootVC respondsToSelector:@selector(interactionController)]) {
+        id interactionController = [rootVC valueForKey:@"interactionController"];
+        
+        // نسأل إذا كانت دالة الإخفاء موجودة بغض النظر عن اسم الكلاس
+        if ([interactionController respondsToSelector:@selector(hideAllElements:exceptArray:)]) {
+            [interactionController hideAllElements:self.elementsHidden exceptArray:nil];
+            return; // نجحت العملية! نخرج من الدالة.
+        }
     }
-
-    if (![self viewWithTag:999]) {
-        [hideElementButton setTintColor:[UIColor whiteColor]];
-        [self addSubview:hideElementButton];
-        [NSLayoutConstraint activateConstraints:@[
-            [hideElementButton.topAnchor constraintEqualToAnchor:self.safeAreaLayoutGuide.topAnchor constant:50],
-            [hideElementButton.trailingAnchor constraintEqualToAnchor:self.safeAreaLayoutGuide.trailingAnchor constant:-10],
-            [hideElementButton.widthAnchor constraintEqualToConstant:30],
-            [hideElementButton.heightAnchor constraintEqualToConstant:30],
-        ]];
-    }
+    
+    // 4. الخطة البديلة (القوية): الإخفاء الإجباري لطبقات الواجهة في حال فشل الطريقة الأولى
+    [UIView animateWithDuration:0.3 animations:^{
+        for (UIView *view in self.contentView.subviews) {
+            // استثناء أزرار أداتنا (زر العين 999، وزر التحميل 998) لكي لا تختفي
+            if (view.tag == 999 || view.tag == 998) continue;
+            
+            // استثناء طبقة الفيديو الأساسية لكي يستمر العرض (عادة تكون أول طبقة)
+            if (view == [self.contentView.subviews firstObject]) continue;
+            
+            NSString *className = NSStringFromClass([view class]);
+            if ([className containsString:@"Video"] || [className containsString:@"Player"]) continue;
+            
+            // إخفاء أو إظهار باقي الطبقات (الأزرار، الوصف، اسم المستخدم)
+            view.alpha = self.elementsHidden ? 0.0 : 1.0;
+        }
+    }];
 }
 
 // رسم زر التحميل الخارجي تحت زر العين
