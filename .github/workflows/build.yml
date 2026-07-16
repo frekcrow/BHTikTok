@@ -1,0 +1,50 @@
+name: Build BHTikTok Tweak
+
+# هذا الأمر هو ما يضمن عدم تشغيل البناء إلا عند ضغطك على الزر يدوياً
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    name: Compile and Package
+    runs-on: macos-latest
+    
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Install System Dependencies
+        run: |
+          brew install ldid dpkg xz make
+
+      - name: Setup Theos Environment
+        run: |
+          bash -c "$(curl -fsSL https://raw.githubusercontent.com/theos/theos/master/bin/install-theos)"
+          echo "THEOS=$HOME/theos" >> $GITHUB_ENV
+
+      - name: Download Patched iOS SDKs
+        run: |
+          git clone https://github.com/theos/sdks.git $HOME/theos/sdks
+
+      - name: Compile and Build Package
+        run: |
+          make package FINALPACKAGE=1
+
+      - name: Extract Dylib for Direct Injection
+        run: |
+          mkdir -p extracted_dylib
+          find .theos/obj -name "*.dylib" -exec cp {} extracted_dylib/ \;
+
+      - name: Upload DEB Package
+        uses: actions/upload-artifact@v4
+        with:
+          name: BHTikTok-DEB
+          path: packages/*.deb
+
+      - name: Upload Dylib File
+        uses: actions/upload-artifact@v4
+        with:
+          name: BHTikTok-Dylib
+          path: extracted_dylib/*.dylib
