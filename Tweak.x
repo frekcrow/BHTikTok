@@ -350,24 +350,38 @@ static BOOL isAuthenticationShowed = FALSE;
 }
 %end
 
-%hook AWEProfileImagePreviewView // save profile image
-- (id)initWithFrame:(CGRect)arg1 image:(id)arg2 imageURL:(id)arg3 backgroundColor:(id)arg4 userID:(id)arg5 type:(NSUInteger)arg6 {
-    self = %orig;
+%hook TTKEnlargeAvatarViewController // save profile image
+
+- (void)viewDidLoad {
+    %orig;
     if ([BHIManager profileSave]) {
         [self addHandleLongPress];
     }
-    return self;
 }
-%new - (void)addHandleLongPress {
+
+%new 
+- (void)addHandleLongPress {
     UILongPressGestureRecognizer *longPress = [[UILongPressGestureRecognizer alloc] initWithTarget:self action:@selector(handleLongPress:)];
     longPress.minimumPressDuration = 0.3;
-    [self addGestureRecognizer:longPress];
+    
+    // إضافة الإيماءة إلى الواجهة الرئيسية للكنترولر
+    [self.view addGestureRecognizer:longPress];
 }
-%new - (void)handleLongPress:(UILongPressGestureRecognizer *)sender {
+
+%new 
+- (void)handleLongPress:(UILongPressGestureRecognizer *)sender {
     if (sender.state == UIGestureRecognizerStateBegan) {
-        [BHIManager showSaveVC:@[self.avatar.image]];
+        
+        // جلب ImageView الذي اكتشفته أنت باستخدام FLEX
+        UIImageView *imageView = [self valueForKey:@"avatarImageView"];
+        
+        // التأكد من وجود الصورة قبل حفظها لتجنب أي انهيار (Crash)
+        if (imageView && imageView.image) {
+            [BHIManager showSaveVC:@[imageView.image]];
+        }
     }
 }
+
 %end
 
 %hook AWEFeedViewCell 
