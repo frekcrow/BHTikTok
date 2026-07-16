@@ -37,8 +37,10 @@
 @end
 
 // كلاس موجود في الهيدرات الأصلية (نستخدم Category لإضافة خصائصنا فقط)
+// كلاس موجود في الهيدرات الأصلية (نستخدم Category لإضافة خصائصنا فقط)
 @interface AWEFeedVideoButton (BHTikTok)
 @property (nonatomic, assign) BOOL bh_confirmed;
+- (void)_onTouchUpInside; // <-- هذا هو السطر الذي سيحل المشكلة
 @end
 
 NSArray *jailbreakPaths;
