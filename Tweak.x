@@ -185,43 +185,46 @@ static BOOL isAuthenticationShowed = FALSE;
 %hook TIKTOKProfileHeaderExtraViewController // follow confirmation
 - (void)relationBtnClicked:(id)sender {
     if ([BHIManager followConfirmation]) {
-        showConfirmation(^(void) { %orig; });
+        showConfirmation(^{ %orig(sender); });
     } else {
-        return %orig;
+        %orig(sender);
     }
 }
 %end
+
 %hook AWEPlayInteractionUserAvatarElement
 - (void)onFollowViewClicked:(id)sender {
     if ([BHIManager followConfirmation]) {
-        showConfirmation(^(void) { %orig; });
+        showConfirmation(^{ %orig(sender); });
     } else {
-        return %orig;
+        %orig(sender);
     }
 }
 %end
+
 %hook AWEFeedVideoButton // like feed confirmation
 - (void)_onTouchUpInside {
     if ([BHIManager likeConfirmation] && [self.imageNameString isEqualToString:@"icon_home_like_before"]) {
-        showConfirmation(^(void) { %orig; });
+        showConfirmation(^{ %orig(); });
     } else {
-        %orig;
+        %orig();
     }
 }
 %end
+
 %hook AWECommentPanelCell // like/dislike comment confirmation
 - (void)likeButtonTapped {
     if ([BHIManager likeCommentConfirmation]) {
-        showConfirmation(^(void) { %orig; });
+        showConfirmation(^{ %orig(); });
     } else {
-        return %orig;
+        %orig();
     }
 }
 - (void)dislikeButtonTapped {
     if ([BHIManager dislikeCommentConfirmation]) {
-        showConfirmation(^(void) { %orig; });
+        showConfirmation(^{ %orig(); });
     } else {
-        return %orig;
+        %orig();
     }
 }
 %end
