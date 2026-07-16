@@ -64,7 +64,7 @@
     return section;
 }
 - (PSSpecifier *)newLinkListCellWithTitle:(NSString *)titleText key:(NSString *)keyText defaultValue:(NSNumber *)defValue dynamicRule:(NSString *)rule validTitles:(NSMutableArray <NSString *> *)validTitles validValues:(NSMutableArray<NSMutableDictionary *> *)validValues {
-    PSSpecifier *linkListCell = [PSSpecifier preferenceSpecifierNamed:titleText target:self set:@selector(setPreferenceValue:specifier:) get:@selector(readPreferenceValue:) detail:PSListItemsController.class cell:PSLinkListCell edit:nil];
+    PSSpecifier *linkListCell = [PSSpecifier preferenceSpecifierNamed:titleText target:self set:@selector(setPreferenceValue:specifier:) get:@selector(readPreferenceValue:) detail:NSClassFromString(@"PSListItemsController") cell:PSLinkListCell edit:nil];
     
     [linkListCell setProperty:keyText forKey:@"key"];
     [linkListCell setProperty:defValue forKey:@"default"];
@@ -126,7 +126,7 @@
     PSSpecifier *HBLinkCell = [PSSpecifier preferenceSpecifierNamed:titleText target:self set:@selector(setPreferenceValue:specifier:) get:@selector(readPreferenceValue:) detail:nil cell:PSButtonCell edit:nil];
     
     [HBLinkCell setButtonAction:@selector(hb_openURL:)];
-    [HBLinkCell setProperty:HBLinkTableCell.class forKey:@"cellClass"];
+    
     [HBLinkCell setProperty:url forKey:@"url"];
     if (detailText != nil) {
         [HBLinkCell setProperty:detailText forKey:@"subtitle"];
@@ -137,7 +137,7 @@
     PSSpecifier *TwitterCell = [PSSpecifier preferenceSpecifierNamed:titleText target:self set:@selector(setPreferenceValue:specifier:) get:@selector(readPreferenceValue:) detail:nil cell:1 edit:nil];
     
     [TwitterCell setButtonAction:@selector(hb_openURL:)];
-    [TwitterCell setProperty:HBTwitterCell.class forKey:@"cellClass"];
+    
     [TwitterCell setProperty:user forKey:@"user"];
     [TwitterCell setProperty:@YES forKey:@"big"];
     [TwitterCell setProperty:@56 forKey:@"height"];
