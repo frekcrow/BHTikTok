@@ -990,9 +990,6 @@ static BOOL isAuthenticationShowed = FALSE;
 - (id)setMode { return (id (^)(id)) ^{ }; }
 %end
 
-%hook HBForceCepheiPrefs
-+ (BOOL)forceCepheiPrefsWhichIReallyNeedToAccessAndIKnowWhatImDoingISwear { return YES; }
-%end
 
 %ctor {
     jailbreakPaths = @[
