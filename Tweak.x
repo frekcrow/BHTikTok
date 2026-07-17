@@ -1017,7 +1017,7 @@ static BOOL isAuthenticationShowed = FALSE;
 %new - (UIMenu *)bh_buildDownloadMenu {
     if (![self.viewController isKindOfClass:%c(TTKStoryDetailContainerViewController)]) return nil;
     id rootVC = self.viewController;
-    AWEAwemeModel *videoModel = [rootVC model].currentPlayingStory;
+    AWEAwemeModel *videoModel = [rootVC valueForKeyPath:@"model.currentPlayingStory"];
     
     NSMutableArray *actions = [NSMutableArray array];
 
