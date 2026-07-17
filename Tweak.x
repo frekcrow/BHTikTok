@@ -161,17 +161,17 @@
 - (UIViewController *)viewController;
 @end
 
-@interface AWENewFeedTableViewController : UIViewController
+@interface AWENewFeedTableViewController (BHTikTok)
 - (void)setPureMode:(BOOL)arg1 withAnimated:(BOOL)arg2;
 - (void)setPureMode:(BOOL)arg1;
 @end
 
-@interface AWEPlayPhotoAlbumViewController : UIViewController
+@interface AWEPlayPhotoAlbumViewController (BHTikTok)
 - (NSUInteger)currentIndex;
 - (id)model; 
 @end
 
-@interface AWEAwemeModel : NSObject
+@interface AWEAwemeModel (BHTikTok)
 - (id)imageAlbumModel; 
 @end
 
