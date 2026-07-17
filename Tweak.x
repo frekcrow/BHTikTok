@@ -38,12 +38,13 @@
 - (void)_onTouchUpInside; // <-- هذا هو السطر الذي سيحل المشكلة
 @end
 
-@class JGProgressHUD;
+@class JGProgressHUD, BHDownload;
 
 @interface AWEFeedViewCell (BHTikTok)
 @property (nonatomic, strong) JGProgressHUD *hud;
 @property (nonatomic, assign) BOOL elementsHidden;
 @property (nonatomic, retain) NSString *fileextension;
+@property (nonatomic, strong) BHDownload *downloadManager;
 - (void)addDownloadButton;
 - (void)bh_downloadVideoAction;
 - (void)addHideElementButton;
@@ -55,6 +56,7 @@
 @property (nonatomic, strong) JGProgressHUD *hud;
 @property (nonatomic, assign) BOOL elementsHidden;
 @property (nonatomic, retain) NSString *fileextension;
+@property (nonatomic, strong) BHDownload *downloadManager;
 - (void)addDownloadButton;
 - (void)bh_downloadVideoAction;
 - (void)addHideElementButton;
@@ -66,6 +68,7 @@
 @property (nonatomic, strong) JGProgressHUD *hud;
 @property (nonatomic, assign) BOOL elementsHidden;
 @property (nonatomic, retain) NSString *fileextension;
+@property (nonatomic, strong) BHDownload *downloadManager;
 - (void)addDownloadButton;
 - (void)bh_downloadVideoAction;
 - (void)addHideElementButton;
@@ -530,9 +533,9 @@ static BOOL isAuthenticationShowed = FALSE;
                 NSURL *downloadableURL = [((AWEMusicModel *)videoModel.music).playURL bestURLtoDownload];
                 self.fileextension = [((AWEMusicModel *)videoModel.music).playURL bestURLtoDownloadFormat];
                 if (downloadableURL) {
-                    BHDownload *dwManager = [[BHDownload alloc] init];
-                    [dwManager downloadFileWithURL:downloadableURL];
-                    [dwManager setDelegate:self];
+                    self.downloadManager = [[BHDownload alloc] init];
+					[self.downloadManager downloadFileWithURL:downloadableURL];
+					[self.downloadManager setDelegate:self];
                     self.hud = [JGProgressHUD progressHUDWithStyle:JGProgressHUDStyleDark];
                     self.hud.textLabel.text = @"Downloading";
                     [self.hud showInView:self.viewController.view];
@@ -588,9 +591,9 @@ static BOOL isAuthenticationShowed = FALSE;
     NSURL *downloadableURL = [videoModel.video.playURL bestURLtoDownload];
     self.fileextension = [videoModel.video.playURL bestURLtoDownloadFormat];
     if (downloadableURL) {
-        BHDownload *dwManager = [[BHDownload alloc] init];
-        [dwManager downloadFileWithURL:downloadableURL];
-        [dwManager setDelegate:self];
+        self.downloadManager = [[BHDownload alloc] init];
+		[self.downloadManager downloadFileWithURL:downloadableURL];
+		[self.downloadManager setDelegate:self];
         self.hud = [JGProgressHUD progressHUDWithStyle:JGProgressHUDStyleDark];
         self.hud.textLabel.text = @"Downloading";
         [self.hud showInView:self.viewController.view];
@@ -638,28 +641,30 @@ static BOOL isAuthenticationShowed = FALSE;
 
 // رسم زر التحميل الخارجي تحت زر العين
 %new - (void)addDownloadButton {
-    UIButton *downloadButton = [UIButton buttonWithType:UIButtonTypeSystem];
-    [downloadButton setTag:998];
-    [downloadButton setTranslatesAutoresizingMaskIntoConstraints:false];
-    [downloadButton addTarget:self action:@selector(bh_downloadVideoAction) forControlEvents:UIControlEventTouchUpInside];
-    [downloadButton setImage:[UIImage systemImageNamed:@"arrow.down.circle.fill"] forState:UIControlStateNormal];
-
-    if (![self viewWithTag:998]) {
+    UIButton *downloadButton = [self.contentView viewWithTag:998];
+    if (!downloadButton) {
+        downloadButton = [UIButton buttonWithType:UIButtonTypeSystem];
+        [downloadButton setTag:998];
+        [downloadButton setTranslatesAutoresizingMaskIntoConstraints:NO];
+        [downloadButton addTarget:self action:@selector(bh_downloadVideoAction) forControlEvents:UIControlEventTouchUpInside];
+        [downloadButton setImage:[UIImage systemImageNamed:@"arrow.down.circle.fill"] forState:UIControlStateNormal];
         [downloadButton setTintColor:[UIColor whiteColor]];
-        [self addSubview:downloadButton];
         
-        UIView *hideButton = [self viewWithTag:999];
+        [self.contentView addSubview:downloadButton];
+        [self.contentView bringSubviewToFront:downloadButton];
+        
+        UIView *hideButton = [self.contentView viewWithTag:999];
         if (hideButton) {
             [NSLayoutConstraint activateConstraints:@[
                 [downloadButton.topAnchor constraintEqualToAnchor:hideButton.bottomAnchor constant:15],
-                [downloadButton.trailingAnchor constraintEqualToAnchor:self.safeAreaLayoutGuide.trailingAnchor constant:-10],
+                [downloadButton.trailingAnchor constraintEqualToAnchor:self.contentView.safeAreaLayoutGuide.trailingAnchor constant:-10],
                 [downloadButton.widthAnchor constraintEqualToConstant:30],
                 [downloadButton.heightAnchor constraintEqualToConstant:30],
             ]];
         } else {
             [NSLayoutConstraint activateConstraints:@[
-                [downloadButton.topAnchor constraintEqualToAnchor:self.safeAreaLayoutGuide.topAnchor constant:95],
-                [downloadButton.trailingAnchor constraintEqualToAnchor:self.safeAreaLayoutGuide.trailingAnchor constant:-10],
+                [downloadButton.topAnchor constraintEqualToAnchor:self.contentView.safeAreaLayoutGuide.topAnchor constant:95],
+                [downloadButton.trailingAnchor constraintEqualToAnchor:self.contentView.safeAreaLayoutGuide.trailingAnchor constant:-10],
                 [downloadButton.widthAnchor constraintEqualToConstant:30],
                 [downloadButton.heightAnchor constraintEqualToConstant:30],
             ]];
@@ -743,9 +748,9 @@ static BOOL isAuthenticationShowed = FALSE;
                 NSURL *downloadableURL = [((AWEMusicModel *)rootVC.model.music).playURL bestURLtoDownload];
                 self.fileextension = [((AWEMusicModel *)rootVC.model.music).playURL bestURLtoDownloadFormat];
                 if (downloadableURL) {
-                    BHDownload *dwManager = [[BHDownload alloc] init];
-                    [dwManager downloadFileWithURL:downloadableURL];
-                    [dwManager setDelegate:self];
+                    self.downloadManager = [[BHDownload alloc] init];
+					[self.downloadManager downloadFileWithURL:downloadableURL];
+					[self.downloadManager setDelegate:self];
                     self.hud = [JGProgressHUD progressHUDWithStyle:JGProgressHUDStyleDark];
                     self.hud.textLabel.text = @"Downloading";
                     [self.hud showInView:self.viewController.view];
@@ -795,9 +800,9 @@ static BOOL isAuthenticationShowed = FALSE;
     NSURL *downloadableURL = [rootVC.model.video.playURL bestURLtoDownload];
     self.fileextension = [rootVC.model.video.playURL bestURLtoDownloadFormat];
     if (downloadableURL) {
-        BHDownload *dwManager = [[BHDownload alloc] init];
-        [dwManager downloadFileWithURL:downloadableURL];
-        [dwManager setDelegate:self];
+        self.downloadManager = [[BHDownload alloc] init];
+		[self.downloadManager downloadFileWithURL:downloadableURL];
+		[self.downloadManager setDelegate:self];
         self.hud = [JGProgressHUD progressHUDWithStyle:JGProgressHUDStyleDark];
         self.hud.textLabel.text = @"Downloading";
         [self.hud showInView:self.viewController.view];
@@ -805,28 +810,30 @@ static BOOL isAuthenticationShowed = FALSE;
 }
 
 %new - (void)addDownloadButton {
-    UIButton *downloadButton = [UIButton buttonWithType:UIButtonTypeSystem];
-    [downloadButton setTag:998];
-    [downloadButton setTranslatesAutoresizingMaskIntoConstraints:false];
-    [downloadButton addTarget:self action:@selector(bh_downloadVideoAction) forControlEvents:UIControlEventTouchUpInside];
-    [downloadButton setImage:[UIImage systemImageNamed:@"arrow.down.circle.fill"] forState:UIControlStateNormal];
-
-    if (![self viewWithTag:998]) {
+    UIButton *downloadButton = [self.contentView viewWithTag:998];
+    if (!downloadButton) {
+        downloadButton = [UIButton buttonWithType:UIButtonTypeSystem];
+        [downloadButton setTag:998];
+        [downloadButton setTranslatesAutoresizingMaskIntoConstraints:NO];
+        [downloadButton addTarget:self action:@selector(bh_downloadVideoAction) forControlEvents:UIControlEventTouchUpInside];
+        [downloadButton setImage:[UIImage systemImageNamed:@"arrow.down.circle.fill"] forState:UIControlStateNormal];
         [downloadButton setTintColor:[UIColor whiteColor]];
-        [self addSubview:downloadButton];
         
-        UIView *hideButton = [self viewWithTag:999];
+        [self.contentView addSubview:downloadButton];
+        [self.contentView bringSubviewToFront:downloadButton];
+        
+        UIView *hideButton = [self.contentView viewWithTag:999];
         if (hideButton) {
             [NSLayoutConstraint activateConstraints:@[
                 [downloadButton.topAnchor constraintEqualToAnchor:hideButton.bottomAnchor constant:15],
-                [downloadButton.trailingAnchor constraintEqualToAnchor:self.safeAreaLayoutGuide.trailingAnchor constant:-10],
+                [downloadButton.trailingAnchor constraintEqualToAnchor:self.contentView.safeAreaLayoutGuide.trailingAnchor constant:-10],
                 [downloadButton.widthAnchor constraintEqualToConstant:30],
                 [downloadButton.heightAnchor constraintEqualToConstant:30],
             ]];
         } else {
             [NSLayoutConstraint activateConstraints:@[
-                [downloadButton.topAnchor constraintEqualToAnchor:self.safeAreaLayoutGuide.topAnchor constant:95],
-                [downloadButton.trailingAnchor constraintEqualToAnchor:self.safeAreaLayoutGuide.trailingAnchor constant:-10],
+                [downloadButton.topAnchor constraintEqualToAnchor:self.contentView.safeAreaLayoutGuide.topAnchor constant:95],
+                [downloadButton.trailingAnchor constraintEqualToAnchor:self.contentView.safeAreaLayoutGuide.trailingAnchor constant:-10],
                 [downloadButton.widthAnchor constraintEqualToConstant:30],
                 [downloadButton.heightAnchor constraintEqualToConstant:30],
             ]];
@@ -835,22 +842,28 @@ static BOOL isAuthenticationShowed = FALSE;
 }
 
 %new - (void)addHideElementButton {
-    UIButton *hideElementButton = [UIButton buttonWithType:UIButtonTypeSystem];
-    [hideElementButton setTag:999];
-    [hideElementButton setTranslatesAutoresizingMaskIntoConstraints:false];
-    [hideElementButton addTarget:self action:@selector(hideElementButtonHandler:) forControlEvents:UIControlEventTouchUpInside];
-    [hideElementButton setImage:[UIImage systemImageNamed:self.elementsHidden ? @"eye.fill" : @"eye.slash.fill"] forState:UIControlStateNormal];
-
-    if (![self viewWithTag:999]) {
+    UIButton *hideElementButton = [self.contentView viewWithTag:999];
+    if (!hideElementButton) {
+        hideElementButton = [UIButton buttonWithType:UIButtonTypeSystem];
+        [hideElementButton setTag:999];
+        [hideElementButton setTranslatesAutoresizingMaskIntoConstraints:NO];
+        [hideElementButton addTarget:self action:@selector(hideElementButtonHandler:) forControlEvents:UIControlEventTouchUpInside];
         [hideElementButton setTintColor:[UIColor whiteColor]];
-        [self addSubview:hideElementButton];
+        
+        // إضافته للواجهة ورفعه للأعلى لكي لا يختفي تحت الفيديو
+        [self.contentView addSubview:hideElementButton];
+        [self.contentView bringSubviewToFront:hideElementButton];
+        
         [NSLayoutConstraint activateConstraints:@[
-            [hideElementButton.topAnchor constraintEqualToAnchor:self.safeAreaLayoutGuide.topAnchor constant:50],
-            [hideElementButton.trailingAnchor constraintEqualToAnchor:self.safeAreaLayoutGuide.trailingAnchor constant:-10],
+            [hideElementButton.topAnchor constraintEqualToAnchor:self.contentView.safeAreaLayoutGuide.topAnchor constant:50],
+            [hideElementButton.trailingAnchor constraintEqualToAnchor:self.contentView.safeAreaLayoutGuide.trailingAnchor constant:-10],
             [hideElementButton.widthAnchor constraintEqualToConstant:30],
             [hideElementButton.heightAnchor constraintEqualToConstant:30],
         ]];
     }
+    
+    // تحديث الأيقونة
+    [hideElementButton setImage:[UIImage systemImageNamed:self.elementsHidden ? @"eye.fill" : @"eye.slash.fill"] forState:UIControlStateNormal];
 }
 
 %new - (void)hideElementButtonHandler:(UIButton *)sender {
@@ -958,9 +971,9 @@ static BOOL isAuthenticationShowed = FALSE;
     NSURL *downloadableURL = [rootVC.model.currentPlayingStory.video.playURL bestURLtoDownload];
     self.fileextension = [rootVC.model.currentPlayingStory.video.playURL bestURLtoDownloadFormat];
     if (downloadableURL) {
-        BHDownload *dwManager = [[BHDownload alloc] init];
-        [dwManager downloadFileWithURL:downloadableURL];
-        [dwManager setDelegate:self];
+        self.downloadManager = [[BHDownload alloc] init];
+[self.downloadManager downloadFileWithURL:downloadableURL];
+[self.downloadManager setDelegate:self];
         self.hud = [JGProgressHUD progressHUDWithStyle:JGProgressHUDStyleDark];
         self.hud.textLabel.text = @"Downloading";
         [self.hud showInView:self.viewController.view];
@@ -968,21 +981,30 @@ static BOOL isAuthenticationShowed = FALSE;
 }
 
 %new - (void)addDownloadButton {
-    UIButton *downloadButton = [UIButton buttonWithType:UIButtonTypeSystem];
-    [downloadButton setTag:998];
-    [downloadButton setTranslatesAutoresizingMaskIntoConstraints:false];
-    [downloadButton addTarget:self action:@selector(bh_downloadVideoAction) forControlEvents:UIControlEventTouchUpInside];
-    [downloadButton setImage:[UIImage systemImageNamed:@"arrow.down.circle.fill"] forState:UIControlStateNormal];
-
-    if (![self viewWithTag:998]) {
+    UIButton *downloadButton = [self.contentView viewWithTag:998];
+    if (!downloadButton) {
+        downloadButton = [UIButton buttonWithType:UIButtonTypeSystem];
+        [downloadButton setTag:998];
+        [downloadButton setTranslatesAutoresizingMaskIntoConstraints:NO];
+        [downloadButton addTarget:self action:@selector(bh_downloadVideoAction) forControlEvents:UIControlEventTouchUpInside];
+        [downloadButton setImage:[UIImage systemImageNamed:@"arrow.down.circle.fill"] forState:UIControlStateNormal];
         [downloadButton setTintColor:[UIColor whiteColor]];
-        [self addSubview:downloadButton];
         
-        UIView *hideButton = [self viewWithTag:999];
+        [self.contentView addSubview:downloadButton];
+        [self.contentView bringSubviewToFront:downloadButton];
+        
+        UIView *hideButton = [self.contentView viewWithTag:999];
         if (hideButton) {
             [NSLayoutConstraint activateConstraints:@[
                 [downloadButton.topAnchor constraintEqualToAnchor:hideButton.bottomAnchor constant:15],
-                [downloadButton.trailingAnchor constraintEqualToAnchor:self.safeAreaLayoutGuide.trailingAnchor constant:-10],
+                [downloadButton.trailingAnchor constraintEqualToAnchor:self.contentView.safeAreaLayoutGuide.trailingAnchor constant:-10],
+                [downloadButton.widthAnchor constraintEqualToConstant:30],
+                [downloadButton.heightAnchor constraintEqualToConstant:30],
+            ]];
+        } else {
+            [NSLayoutConstraint activateConstraints:@[
+                [downloadButton.topAnchor constraintEqualToAnchor:self.contentView.safeAreaLayoutGuide.topAnchor constant:95],
+                [downloadButton.trailingAnchor constraintEqualToAnchor:self.contentView.safeAreaLayoutGuide.trailingAnchor constant:-10],
                 [downloadButton.widthAnchor constraintEqualToConstant:30],
                 [downloadButton.heightAnchor constraintEqualToConstant:30],
             ]];
@@ -991,22 +1013,28 @@ static BOOL isAuthenticationShowed = FALSE;
 }
 
 %new - (void)addHideElementButton {
-    UIButton *hideElementButton = [UIButton buttonWithType:UIButtonTypeSystem];
-    [hideElementButton setTag:999];
-    [hideElementButton setTranslatesAutoresizingMaskIntoConstraints:false];
-    [hideElementButton addTarget:self action:@selector(hideElementButtonHandler:) forControlEvents:UIControlEventTouchUpInside];
-    [hideElementButton setImage:[UIImage systemImageNamed:self.elementsHidden ? @"eye.fill" : @"eye.slash.fill"] forState:UIControlStateNormal];
-
-    if (![self viewWithTag:999]) {
+    UIButton *hideElementButton = [self.contentView viewWithTag:999];
+    if (!hideElementButton) {
+        hideElementButton = [UIButton buttonWithType:UIButtonTypeSystem];
+        [hideElementButton setTag:999];
+        [hideElementButton setTranslatesAutoresizingMaskIntoConstraints:NO];
+        [hideElementButton addTarget:self action:@selector(hideElementButtonHandler:) forControlEvents:UIControlEventTouchUpInside];
         [hideElementButton setTintColor:[UIColor whiteColor]];
-        [self addSubview:hideElementButton];
+        
+        // إضافته للواجهة ورفعه للأعلى لكي لا يختفي تحت الفيديو
+        [self.contentView addSubview:hideElementButton];
+        [self.contentView bringSubviewToFront:hideElementButton];
+        
         [NSLayoutConstraint activateConstraints:@[
-            [hideElementButton.topAnchor constraintEqualToAnchor:self.safeAreaLayoutGuide.topAnchor constant:50],
-            [hideElementButton.trailingAnchor constraintEqualToAnchor:self.safeAreaLayoutGuide.trailingAnchor constant:-10],
+            [hideElementButton.topAnchor constraintEqualToAnchor:self.contentView.safeAreaLayoutGuide.topAnchor constant:50],
+            [hideElementButton.trailingAnchor constraintEqualToAnchor:self.contentView.safeAreaLayoutGuide.trailingAnchor constant:-10],
             [hideElementButton.widthAnchor constraintEqualToConstant:30],
             [hideElementButton.heightAnchor constraintEqualToConstant:30],
         ]];
     }
+    
+    // تحديث الأيقونة
+    [hideElementButton setImage:[UIImage systemImageNamed:self.elementsHidden ? @"eye.fill" : @"eye.slash.fill"] forState:UIControlStateNormal];
 }
 %new - (void)hideElementButtonHandler:(UIButton *)sender {
     self.elementsHidden = !self.elementsHidden;
