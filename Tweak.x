@@ -38,25 +38,39 @@
 - (void)_onTouchUpInside; // <-- هذا هو السطر الذي سيحل المشكلة
 @end
 
-@interface AWEFeedViewCell : UITableViewCell
+@class JGProgressHUD;
+
+@interface AWEFeedViewCell (BHTikTok)
+@property (nonatomic, strong) JGProgressHUD *hud;
+@property (nonatomic, assign) BOOL elementsHidden;
+@property (nonatomic, retain) NSString *fileextension;
 - (void)addDownloadButton;
 - (void)bh_downloadVideoAction;
 - (void)addHideElementButton;
 - (void)addHandleLongPress;
+- (UIViewController *)viewController;
 @end
 
-@interface AWEAwemeDetailTableViewCell : UITableViewCell
+@interface AWEAwemeDetailTableViewCell (BHTikTok)
+@property (nonatomic, strong) JGProgressHUD *hud;
+@property (nonatomic, assign) BOOL elementsHidden;
+@property (nonatomic, retain) NSString *fileextension;
 - (void)addDownloadButton;
 - (void)bh_downloadVideoAction;
 - (void)addHideElementButton;
 - (void)addHandleLongPress;
+- (UIViewController *)viewController;
 @end
 
-@interface TTKStoryDetailTableViewCell : UITableViewCell
+@interface TTKStoryDetailTableViewCell (BHTikTok)
+@property (nonatomic, strong) JGProgressHUD *hud;
+@property (nonatomic, assign) BOOL elementsHidden;
+@property (nonatomic, retain) NSString *fileextension;
 - (void)addDownloadButton;
 - (void)bh_downloadVideoAction;
 - (void)addHideElementButton;
 - (void)addHandleLongPress;
+- (UIViewController *)viewController;
 @end
 
 NSArray *jailbreakPaths;
