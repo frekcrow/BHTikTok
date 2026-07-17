@@ -76,6 +76,11 @@
 - (UIViewController *)viewController;
 @end
 
+@interface AWENewFeedTableViewController : UIViewController
+- (void)setPureMode:(BOOL)arg1 withAnimated:(BOOL)arg2;
+- (void)setPureMode:(BOOL)arg1;
+@end
+
 NSArray *jailbreakPaths;
 
 static void showConfirmation(void (^okHandler)(void)) {
@@ -867,27 +872,28 @@ static BOOL isAuthenticationShowed = FALSE;
 }
 
 %new - (void)hideElementButtonHandler:(UIButton *)sender {
+    // 1. عكس حالة الإخفاء الحالية
     self.elementsHidden = !self.elementsHidden;
-    [sender setImage:[UIImage systemImageNamed:self.elementsHidden ? @"eye.fill" : @"eye.slash.fill"] forState:UIControlStateNormal];
     
-    AWEAwemeBaseViewController *rootVC = self.viewController;
-    if ([rootVC respondsToSelector:@selector(interactionController)]) {
-        id interactionController = rootVC.interactionController;
-        if ([interactionController respondsToSelector:@selector(hideAllElements:exceptArray:)]) {
-            [interactionController hideAllElements:self.elementsHidden exceptArray:nil];
-            return;
+    // 2. تحديث أيقونة زر العين استجابةً للضغطة
+    NSString *iconName = self.elementsHidden ? @"eye.slash.fill" : @"eye.fill";
+    [sender setImage:[UIImage systemImageNamed:iconName] forState:UIControlStateNormal];
+    
+    // 3. جلب المتحكم الرئيسي للصفحة (Controller)
+    UIViewController *rootVC = [self respondsToSelector:@selector(viewController)] ? [self performSelector:@selector(viewController)] : nil;
+    
+    // 4. التأكد من أننا داخل صفحة الفيديوهات الرئيسية (Feed)
+    if ([rootVC isKindOfClass:%c(AWENewFeedTableViewController)]) {
+        AWENewFeedTableViewController *feedVC = (AWENewFeedTableViewController *)rootVC;
+        
+        // 5. استدعاء دالة "الوضع الصافي" الأصلية الخاصة بتيك توك بأمان تام
+        if ([feedVC respondsToSelector:@selector(setPureMode:withAnimated:)]) {
+            [feedVC setPureMode:self.elementsHidden withAnimated:YES];
+        } else if ([feedVC respondsToSelector:@selector(setPureMode:)]) {
+            // خطة بديلة للإصدارات التي قد لا تتطلب متغير الأنيميشن
+            [feedVC setPureMode:self.elementsHidden];
         }
     }
-    
-    [UIView animateWithDuration:0.3 animations:^{
-        for (UIView *view in self.contentView.subviews) {
-            if (view.tag == 999 || view.tag == 998) continue;
-            if (view == [self.contentView.subviews firstObject]) continue;
-            NSString *className = NSStringFromClass([view class]);
-            if ([className containsString:@"Video"] || [className containsString:@"Player"]) continue;
-            view.alpha = self.elementsHidden ? 0.0 : 1.0;
-        }
-    }];
 }
 
 %new - (void)downloadProgress:(float)progress {
