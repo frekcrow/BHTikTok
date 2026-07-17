@@ -1,6 +1,93 @@
 #import "TikTokHeaders.h"
 #import <UIKit/UIKit.h>
 #import <Foundation/Foundation.h>
+
+@class BHDownload;
+
+@interface BHTikTokProgressView : UIView
+@property (nonatomic, strong) CAShapeLayer *progressLayer;
+@property (nonatomic, strong) UIImageView *statusImageView;
+- (void)updateProgress:(CGFloat)progress;
+- (void)showSuccess;
+- (void)showError;
+@end
+
+@implementation BHTikTokProgressView
+- (instancetype)initWithFrame:(CGRect)frame {
+    self = [super initWithFrame:frame];
+    if (self) {
+        self.backgroundColor = [UIColor colorWithWhite:0.0 alpha:0.7];
+        self.layer.cornerRadius = frame.size.width / 2;
+        self.clipsToBounds = YES;
+        
+        UIBezierPath *circlePath = [UIBezierPath bezierPathWithArcCenter:CGPointMake(frame.size.width / 2, frame.size.height / 2)
+                                                                  radius:(frame.size.width / 2) - 4
+                                                              startAngle:-M_PI_2
+                                                                endAngle:M_PI_2 * 3
+                                                               clockwise:YES];
+        
+        CAShapeLayer *trackLayer = [CAShapeLayer layer];
+        trackLayer.path = circlePath.CGPath;
+        trackLayer.strokeColor = [[UIColor whiteColor] colorWithAlphaComponent:0.3].CGColor;
+        trackLayer.fillColor = [UIColor clearColor].CGColor;
+        trackLayer.lineWidth = 3.0;
+        [self.layer addSublayer:trackLayer];
+        
+        self.progressLayer = [CAShapeLayer layer];
+        self.progressLayer.path = circlePath.CGPath;
+        self.progressLayer.strokeColor = [UIColor whiteColor].CGColor;
+        self.progressLayer.fillColor = [UIColor clearColor].CGColor;
+        self.progressLayer.lineWidth = 3.0;
+        self.progressLayer.strokeEnd = 0.0;
+        self.progressLayer.lineCap = kCALineCapRound;
+        [self.layer addSublayer:self.progressLayer];
+        
+        self.statusImageView = [[UIImageView alloc] initWithFrame:CGRectMake(0, 0, frame.size.width * 0.5, frame.size.height * 0.5)];
+        self.statusImageView.center = CGPointMake(frame.size.width / 2, frame.size.height / 2);
+        self.statusImageView.contentMode = UIViewContentModeScaleAspectFit;
+        self.statusImageView.tintColor = [UIColor whiteColor];
+        self.statusImageView.hidden = YES;
+        [self addSubview:self.statusImageView];
+    }
+    return self;
+}
+
+- (void)updateProgress:(CGFloat)progress {
+    dispatch_async(dispatch_get_main_queue(), ^{
+        self.statusImageView.hidden = YES;
+        self.progressLayer.strokeEnd = progress;
+    });
+}
+
+- (void)showSuccess {
+    dispatch_async(dispatch_get_main_queue(), ^{
+        self.progressLayer.hidden = YES;
+        self.statusImageView.image = [UIImage systemImageNamed:@"checkmark"];
+        self.statusImageView.tintColor = [UIColor whiteColor];
+        self.statusImageView.hidden = NO;
+        
+        dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(1.5 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
+            [self removeFromSuperview];
+        });
+    });
+}
+
+- (void)showError {
+    dispatch_async(dispatch_get_main_queue(), ^{
+        self.progressLayer.strokeColor = [UIColor redColor].CGColor;
+        self.progressLayer.strokeEnd = 1.0;
+        self.progressLayer.hidden = NO;
+        self.statusImageView.image = [UIImage systemImageNamed:@"xmark"];
+        self.statusImageView.tintColor = [UIColor redColor];
+        self.statusImageView.hidden = NO;
+        
+        dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(2.0 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
+            [self removeFromSuperview];
+        });
+    });
+}
+@end
+
 @interface TTKTabBarButton : UIControl
 @end
 
@@ -13,7 +100,6 @@
 - (void)addHandleLongPress;
 @end
 
-// كلاسات غير موجودة في الهيدرات الأصلية (نعرفها بالكامل مع خصائصنا)
 @interface TIKTOKProfileHeaderExtraViewController : UIViewController
 @property (nonatomic, assign) BOOL bh_confirmed;
 - (void)relationBtnClicked:(id)arg1;
@@ -31,48 +117,47 @@
 - (void)dislikeButtonTapped;
 @end
 
-// كلاس موجود في الهيدرات الأصلية (نستخدم Category لإضافة خصائصنا فقط)
-// كلاس موجود في الهيدرات الأصلية (نستخدم Category لإضافة خصائصنا فقط)
 @interface AWEFeedVideoButton (BHTikTok)
 @property (nonatomic, assign) BOOL bh_confirmed;
-- (void)_onTouchUpInside; // <-- هذا هو السطر الذي سيحل المشكلة
+- (void)_onTouchUpInside; 
 @end
 
-@class JGProgressHUD, BHDownload;
-
 @interface AWEFeedViewCell (BHTikTok)
-@property (nonatomic, strong) JGProgressHUD *hud;
+@property (nonatomic, strong) BHTikTokProgressView *progressCircle;
 @property (nonatomic, assign) BOOL elementsHidden;
 @property (nonatomic, retain) NSString *fileextension;
 @property (nonatomic, strong) BHDownload *downloadManager;
 - (void)addDownloadButton;
 - (void)bh_downloadVideoAction;
+- (void)bh_downloadCurrentPhotoAction;
+- (void)bh_downloadAllPhotosAction;
+- (UIMenu *)bh_buildDownloadMenu;
 - (void)addHideElementButton;
-- (void)addHandleLongPress;
 - (UIViewController *)viewController;
+- (UIViewController *)bh_getPhotoAlbumViewController;
 @end
 
 @interface AWEAwemeDetailTableViewCell (BHTikTok)
-@property (nonatomic, strong) JGProgressHUD *hud;
+@property (nonatomic, strong) BHTikTokProgressView *progressCircle;
 @property (nonatomic, assign) BOOL elementsHidden;
 @property (nonatomic, retain) NSString *fileextension;
 @property (nonatomic, strong) BHDownload *downloadManager;
 - (void)addDownloadButton;
 - (void)bh_downloadVideoAction;
+- (UIMenu *)bh_buildDownloadMenu;
 - (void)addHideElementButton;
-- (void)addHandleLongPress;
 - (UIViewController *)viewController;
 @end
 
 @interface TTKStoryDetailTableViewCell (BHTikTok)
-@property (nonatomic, strong) JGProgressHUD *hud;
+@property (nonatomic, strong) BHTikTokProgressView *progressCircle;
 @property (nonatomic, assign) BOOL elementsHidden;
 @property (nonatomic, retain) NSString *fileextension;
 @property (nonatomic, strong) BHDownload *downloadManager;
 - (void)addDownloadButton;
 - (void)bh_downloadVideoAction;
+- (UIMenu *)bh_buildDownloadMenu;
 - (void)addHideElementButton;
-- (void)addHandleLongPress;
 - (UIViewController *)viewController;
 @end
 
@@ -83,10 +168,9 @@
 
 @interface AWEPlayPhotoAlbumViewController : UIViewController
 - (NSUInteger)currentIndex;
-- (id)model; // يعيد كائن AWEAwemeModel
+- (id)model; 
 @end
 
-// تعريف الموديل الأساسي للوصول لبيانات الصور
 @interface AWEAwemeModel : NSObject
 - (id)imageAlbumModel; 
 @end
@@ -98,10 +182,6 @@ static void showConfirmation(void (^okHandler)(void)) {
     okHandler();
   } cancelBlock:nil];
 }
-
-// ==========================================
-// 2. إعدادات التطبيق وتخطي القيود
-// ==========================================
 
 %hook AppDelegate
 - (_Bool)application:(UIApplication *)application didFinishLaunchingWithOptions:(id)arg2 {
@@ -144,11 +224,8 @@ static BOOL isAuthenticationShowed = FALSE;
 %end
 
 %hook TTKTabBarButton
-
 - (void)layoutSubviews {
     %orig;
-    
-    // 1. التحقق من أننا لم نضف الإيماءة مسبقاً لتجنب التكرار والتسبب في كراش
     BOOL hasLongPress = NO;
     for (UIGestureRecognizer *recognizer in self.gestureRecognizers) {
         if ([recognizer isKindOfClass:[UILongPressGestureRecognizer class]]) {
@@ -157,37 +234,24 @@ static BOOL isAuthenticationShowed = FALSE;
         }
     }
     
-    // 2. إذا لم تكن الإيماءة موجودة، نقوم بإنشائها
     if (!hasLongPress) {
-        // نستخدم الـ accessibilityLabel الذي استخرجته من FLEX لتمييز زر الملف الشخصي
         NSString *label = self.accessibilityLabel;
-        
-        // وضعنا عدة احتمالات للغات المختلفة (عربي/إنجليزي) لضمان عملها دائماً
         if ([label containsString:@"Profile"] || [label containsString:@"الملف الشخصي"] || [label containsString:@"Me"] || [label containsString:@"أنا"]) {
-            
             UILongPressGestureRecognizer *longPress = [[UILongPressGestureRecognizer alloc] initWithTarget:self action:@selector(bh_openSettings:)];
-            longPress.minimumPressDuration = 0.5; // نصف ثانية من الضغط المستمر
+            longPress.minimumPressDuration = 0.5; 
             [self addGestureRecognizer:longPress];
         }
     }
 }
 
-// 3. الدالة التي سيتم تنفيذها عند الضغط المطول
 %new
 - (void)bh_openSettings:(UILongPressGestureRecognizer *)sender {
-    // نتأكد أن الحدث يتم تنفيذه مرة واحدة عند بداية الضغط
     if (sender.state == UIGestureRecognizerStateBegan) {
-        // تجهيز واجهة الإعدادات الخاصة بنا
         UINavigationController *BHTikTokSettings = [[UINavigationController alloc] initWithRootViewController:[[SettingsViewController alloc] init]];
-        
-        // استخدام الدالة المساعدة لجلب الواجهة الحالية المفتوحة
         UIViewController *topVC = topMostController();
-        
-        // إظهار واجهة الإعدادات بانزلاق أنيق من الأسفل
         [topVC presentViewController:BHTikTokSettings animated:YES completion:nil];
     }
 }
-
 %end
 
 %hook SparkViewController 
@@ -304,10 +368,6 @@ static BOOL isAuthenticationShowed = FALSE;
 }
 %end
 
-// ==========================================
-// 3. التفاعلات والتأكيدات (النسخة الآمنة)
-// ==========================================
-
 %hook TIKTOKProfileHeaderExtraViewController 
 %property (nonatomic, assign) BOOL bh_confirmed;
 - (void)relationBtnClicked:(id)sender {
@@ -402,10 +462,6 @@ static BOOL isAuthenticationShowed = FALSE;
 }
 %end
 
-// ==========================================
-// 4. الملف الشخصي (النسخ والحفظ)
-// ==========================================
-
 %hook TTKProfileHeaderView 
 - (id)initWithFrame:(CGRect)arg1 {
     self = %orig;
@@ -414,7 +470,6 @@ static BOOL isAuthenticationShowed = FALSE;
     }
     return self;
 }
-
 %end
 
 %hook TTKEnlargeAvatarViewController 
@@ -441,238 +496,44 @@ static BOOL isAuthenticationShowed = FALSE;
 }
 %end
 
-// ==========================================
-// 5. أقسام التحميل وإخفاء العناصر (Feed/Detail/Story)
-// ==========================================
-
 %hook AWEFeedViewCell 
-%property (nonatomic, strong) JGProgressHUD *hud;
+%property (nonatomic, strong) BHTikTokProgressView *progressCircle;
 %property(nonatomic, assign) BOOL elementsHidden;
 %property (nonatomic, retain) NSString *fileextension;
+%property (nonatomic, strong) BHDownload *downloadManager;
 
 - (void)configWithModel:(id)model {
     %orig;
     self.elementsHidden = false;
     if ([BHIManager hideElementButton]) [self addHideElementButton];
-    if ([BHIManager downloadVideos]) [self addDownloadButton]; // إضافة زر التحميل
+    if ([BHIManager downloadVideos]) [self addDownloadButton]; 
 }
+
 - (void)configureWithModel:(id)model {
     %orig;
     self.elementsHidden = false;
     if ([BHIManager hideElementButton]) [self addHideElementButton];
-    if ([BHIManager downloadVideos]) [self addDownloadButton]; // إضافة زر التحميل
+    if ([BHIManager downloadVideos]) [self addDownloadButton]; 
 }
 
-%new - (void)addHandleLongPress {
-    UILongPressGestureRecognizer *longPress = [[UILongPressGestureRecognizer alloc] initWithTarget:self action:@selector(handleLongPress:)];
-    longPress.minimumPressDuration = 0.4;
-    [self addGestureRecognizer:longPress];
-}
-
-%new - (void)handleLongPress:(UILongPressGestureRecognizer *)sender {
-    if (sender.state == UIGestureRecognizerStateBegan) {
-        AWEAwemeModel *videoModel = [self valueForKey:@"model"] ?: [self valueForKey:@"aweme"];
-        NSString *video_description = videoModel.music_songName ?: @"BHTikTok Options";
-
-        // استخدام واجهة النظام الأصلية بدلاً من واجهة تيك توك المعطلة
-        UIAlertController *alert = [UIAlertController alertControllerWithTitle:@"BHTikTok" message:video_description preferredStyle:UIAlertControllerStyleActionSheet];
-
-        if ([BHIManager downloadVideos]) {
-            UIAlertAction *downloadVideo = [UIAlertAction actionWithTitle:@"Download video" style:UIAlertActionStyleDefault handler:^(UIAlertAction * action) {
-                [self bh_downloadVideoAction];
-            }];
-            [downloadVideo setValue:[UIImage systemImageNamed:@"arrow.down"] forKey:@"image"];
-            [alert addAction:downloadVideo];
-        }
-
-        if ([BHIManager downloadMusics]) {
-            UIAlertAction *downloadMusic = [UIAlertAction actionWithTitle:@"Download music" style:UIAlertActionStyleDefault handler:^(UIAlertAction * action) {
-                NSURL *downloadableURL = [((AWEMusicModel *)videoModel.music).playURL bestURLtoDownload];
-                self.fileextension = [((AWEMusicModel *)videoModel.music).playURL bestURLtoDownloadFormat];
-                if (downloadableURL) {
-                    self.downloadManager = [[BHDownload alloc] init];
-					[self.downloadManager downloadFileWithURL:downloadableURL];
-					[self.downloadManager setDelegate:self];
-                    self.hud = [JGProgressHUD progressHUDWithStyle:JGProgressHUDStyleDark];
-                    self.hud.textLabel.text = @"Downloading";
-                    [self.hud showInView:self.viewController.view];
-                }
-            }];
-            [downloadMusic setValue:[UIImage systemImageNamed:@"music.note"] forKey:@"image"];
-            [alert addAction:downloadMusic];
-        }
-
-        if ([BHIManager copyMusicLink]) {
-            UIAlertAction *copyMusic = [UIAlertAction actionWithTitle:@"Copy music link" style:UIAlertActionStyleDefault handler:^(UIAlertAction * action) {
-                NSURL *downloadableURL = [((AWEMusicModel *)videoModel.music).playURL bestURLtoDownload];
-                if (downloadableURL) {
-                    UIPasteboard *pasteboard = [UIPasteboard generalPasteboard];
-                    pasteboard.string = [downloadableURL absoluteString];
-                }
-            }];
-            [copyMusic setValue:[UIImage systemImageNamed:@"link"] forKey:@"image"];
-            [alert addAction:copyMusic];
-        }
-
-        if ([BHIManager copyVideoLink]) {
-            UIAlertAction *copyVideo = [UIAlertAction actionWithTitle:@"Copy video link" style:UIAlertActionStyleDefault handler:^(UIAlertAction * action) {
-                NSURL *downloadableURL = [videoModel.video.playURL bestURLtoDownload];
-                if (downloadableURL) {
-                    UIPasteboard *pasteboard = [UIPasteboard generalPasteboard];
-                    pasteboard.string = [downloadableURL absoluteString];
-                }
-            }];
-            [copyVideo setValue:[UIImage systemImageNamed:@"link"] forKey:@"image"];
-            [alert addAction:copyVideo];
-        }
-
-        if ([BHIManager copyVideoDecription]) {
-            UIAlertAction *copyDesc = [UIAlertAction actionWithTitle:@"Copy description" style:UIAlertActionStyleDefault handler:^(UIAlertAction * action) {
-                UIPasteboard *pasteboard = [UIPasteboard generalPasteboard];
-                pasteboard.string = video_description;
-            }];
-            [copyDesc setValue:[UIImage systemImageNamed:@"doc.on.doc"] forKey:@"image"];
-            [alert addAction:copyDesc];
-        }
-
-        UIAlertAction *cancel = [UIAlertAction actionWithTitle:@"Cancel" style:UIAlertActionStyleCancel handler:nil];
-        [alert addAction:cancel];
-
-        [self.viewController presentViewController:alert animated:YES completion:nil];
-    }
-}
-
-// دالة التحميل المباشر
-%new - (void)bh_downloadVideoAction {
-    AWEAwemeModel *videoModel = [self valueForKey:@"model"] ?: [self valueForKey:@"aweme"];
-    NSURL *downloadableURL = [videoModel.video.playURL bestURLtoDownload];
-    self.fileextension = [videoModel.video.playURL bestURLtoDownloadFormat];
-    if (downloadableURL) {
-        self.downloadManager = [[BHDownload alloc] init];
-		[self.downloadManager downloadFileWithURL:downloadableURL];
-		[self.downloadManager setDelegate:self];
-        self.hud = [JGProgressHUD progressHUDWithStyle:JGProgressHUDStyleDark];
-        self.hud.textLabel.text = @"Downloading";
-        [self.hud showInView:self.viewController.view];
-    }
-}
-
-%new - (void)bh_downloadCurrentPhotoAction {
-    AWEPlayPhotoAlbumViewController *albumVC = [self bh_getPhotoAlbumViewController];
-    
-    if (albumVC) {
-        NSUInteger currentIndex = [albumVC currentIndex];
-        id videoModel = [albumVC model];
-        
-        // جلب كائن ألبوم الصور
-        id imageAlbum = [videoModel respondsToSelector:@selector(imageAlbumModel)] ? [videoModel performSelector:@selector(imageAlbumModel)] : nil;
-        
-        // جلب مصفوفة الصور (سنحتاج لاحقاً للتأكد من اسم هذه المصفوفة في تيك توك)
-        NSArray *imagesArray = [imageAlbum respondsToSelector:@selector(imageAlbumItems)] ? [imageAlbum performSelector:@selector(imageAlbumItems)] : nil;
-        
-        if (imagesArray && currentIndex < imagesArray.count) {
-            id currentPhotoData = imagesArray[currentIndex];
-            
-            // هنا سيتم تمرير currentPhotoData إلى دائرة التحميل التي سنبرمجها
-            NSLog(@"BHTikTok: Ready to download single photo at index %lu", (unsigned long)currentIndex);
-        }
-    }
-}
-
-// دالة تحميل جميع الصور دفعة واحدة
-%new - (void)bh_downloadAllPhotosAction {
-    AWEPlayPhotoAlbumViewController *albumVC = [self bh_getPhotoAlbumViewController];
-    
-    if (albumVC) {
-        id videoModel = [albumVC model];
-        id imageAlbum = [videoModel respondsToSelector:@selector(imageAlbumModel)] ? [videoModel performSelector:@selector(imageAlbumModel)] : nil;
-        NSArray *imagesArray = [imageAlbum respondsToSelector:@selector(imageAlbumItems)] ? [imageAlbum performSelector:@selector(imageAlbumItems)] : nil;
-        
-        if (imagesArray && imagesArray.count > 0) {
-            // هنا سيتم عمل حلقة تكرارية (Loop) لتمرير جميع الصور إلى مدير التحميل
-            NSLog(@"BHTikTok: Ready to download ALL %lu photos", (unsigned long)imagesArray.count);
-        }
-    }
-}
-
-// دالة هندسية مساعدة: تبحث عن المتحكم الخاص بالصور داخل الشاشة
-%new - (AWEPlayPhotoAlbumViewController *)bh_getPhotoAlbumViewController {
-    UIViewController *rootVC = [self respondsToSelector:@selector(viewController)] ? [self valueForKey:@"viewController"] : nil;
-    
-    if (rootVC) {
-        // تيك توك يزرع متحكم الصور كـ Child داخل المتحكم الأساسي، سنبحث عنه هنا:
-        for (UIViewController *child in rootVC.childViewControllers) {
-            if ([child isKindOfClass:%c(AWEPlayPhotoAlbumViewController)]) {
-                return (AWEPlayPhotoAlbumViewController *)child;
-            }
-        }
-    }
-    return nil;
-}
-
-// رسم زر العين
-%new - (void)hideElementButtonHandler:(UIButton *)sender {
-    // 1. عكس حالة الإخفاء الحالية (إذا كانت ظاهرة نخفيها والعكس)
-    self.elementsHidden = !self.elementsHidden;
-    
-    // 2. تحديث أيقونة زر العين استجابةً للضغطة
-    [sender setImage:[UIImage systemImageNamed:self.elementsHidden ? @"eye.fill" : @"eye.slash.fill"] forState:UIControlStateNormal];
-    
-    // 3. الطريقة الأولى (الناعمة): محاولة استخدام نظام إخفاء تيك توك المدمج ديناميكياً
-    id rootVC = [self respondsToSelector:@selector(viewController)] ? [self valueForKey:@"viewController"] : nil;
-    
-    if (rootVC && [rootVC respondsToSelector:@selector(interactionController)]) {
-        id interactionController = [rootVC valueForKey:@"interactionController"];
-        
-        // نسأل إذا كانت دالة الإخفاء موجودة بغض النظر عن اسم الكلاس
-        if ([interactionController respondsToSelector:@selector(hideAllElements:exceptArray:)]) {
-            [interactionController hideAllElements:self.elementsHidden exceptArray:nil];
-            return; // نجحت العملية! نخرج من الدالة.
-        }
-    }
-    
-    // 4. الخطة البديلة (القوية): الإخفاء الإجباري لطبقات الواجهة في حال فشل الطريقة الأولى
-    [UIView animateWithDuration:0.3 animations:^{
-        for (UIView *view in self.contentView.subviews) {
-            // استثناء أزرار أداتنا (زر العين 999، وزر التحميل 998) لكي لا تختفي
-            if (view.tag == 999 || view.tag == 998) continue;
-            
-            // استثناء طبقة الفيديو الأساسية لكي يستمر العرض (عادة تكون أول طبقة)
-            if (view == [self.contentView.subviews firstObject]) continue;
-            
-            NSString *className = NSStringFromClass([view class]);
-            if ([className containsString:@"Video"] || [className containsString:@"Player"]) continue;
-            
-            // إخفاء أو إظهار باقي الطبقات (الأزرار، الوصف، اسم المستخدم)
-            view.alpha = self.elementsHidden ? 0.0 : 1.0;
-        }
-    }];
-}
-
-// رسم زر التحميل الخارجي تحت زر العين
 %new - (void)addDownloadButton {
     UIButton *downloadButton = [self.contentView viewWithTag:998];
     if (!downloadButton) {
         downloadButton = [UIButton buttonWithType:UIButtonTypeSystem];
         [downloadButton setTag:998];
         [downloadButton setTranslatesAutoresizingMaskIntoConstraints:NO];
-        
-        // الأيقونة الافتراضية للزر
         [downloadButton setImage:[UIImage systemImageNamed:@"arrow.down.circle.fill"] forState:UIControlStateNormal];
         [downloadButton setTintColor:[UIColor whiteColor]];
         
-        // تفعيل خاصية القائمة المستطيلة المدمجة (UIMenu) بضغطة واحدة
         if (@available(iOS 14.0, *)) {
             downloadButton.showsMenuAsPrimaryAction = YES;
         } else {
-            // كخطة بديلة للإصدارات القديمة جداً
             [downloadButton addTarget:self action:@selector(bh_downloadVideoAction) forControlEvents:UIControlEventTouchUpInside];
         }
         
         [self.contentView addSubview:downloadButton];
         [self.contentView bringSubviewToFront:downloadButton];
         
-        // ضبط المسافات الهندسية ليكون تحت زر العين
         UIView *hideButton = [self.contentView viewWithTag:999];
         if (hideButton) {
             [NSLayoutConstraint activateConstraints:@[
@@ -684,18 +545,14 @@ static BOOL isAuthenticationShowed = FALSE;
         }
     }
     
-    // بناء القائمة ديناميكياً في كل مرة يظهر فيها الزر ليتوافق مع المنشور الحالي
     if (@available(iOS 14.0, *)) {
         downloadButton.menu = [self bh_buildDownloadMenu];
     }
 }
 
-// الدالة الهندسية المسؤولة عن بناء خيارات القائمة حسب نوع المنشور (صور أو فيديو)
 %new - (UIMenu *)bh_buildDownloadMenu {
-    // 1. جلب الموديل الأساسي للمنشور
     id videoModel = [self respondsToSelector:@selector(model)] ? [self valueForKey:@"model"] : [self valueForKey:@"aweme"];
     
-    // 2. فحص نوع المنشور (هل يحتوي على ألبوم صور؟)
     BOOL isPhotoAlbum = NO;
     if ([videoModel respondsToSelector:@selector(imageAlbumModel)] && [videoModel valueForKey:@"imageAlbumModel"] != nil) {
         isPhotoAlbum = YES;
@@ -703,206 +560,121 @@ static BOOL isAuthenticationShowed = FALSE;
 
     NSMutableArray *actions = [NSMutableArray array];
 
-    // 3. بناء الخيارات بناءً على النوع
     if (isPhotoAlbum) {
-        // خيارات الصور
         UIAction *downloadCurrentPhoto = [UIAction actionWithTitle:@"Download this photo" image:[UIImage systemImageNamed:@"photo"] identifier:nil handler:^(__kindof UIAction * _Nonnull action) {
-            [self bh_downloadCurrentPhotoAction]; // سنقوم ببرمجة هذه الدالة في الخطوة القادمة
+            [self bh_downloadCurrentPhotoAction]; 
         }];
         [actions addObject:downloadCurrentPhoto];
 
         UIAction *downloadAllPhotos = [UIAction actionWithTitle:@"Download all photos" image:[UIImage systemImageNamed:@"photo.on.rectangle"] identifier:nil handler:^(__kindof UIAction * _Nonnull action) {
-            [self bh_downloadAllPhotosAction]; // سنقوم ببرمجة هذه الدالة في الخطوة القادمة
+            [self bh_downloadAllPhotosAction]; 
         }];
         [actions addObject:downloadAllPhotos];
     } else {
-        // خيارات الفيديو
         UIAction *downloadVideo = [UIAction actionWithTitle:@"Download video" image:[UIImage systemImageNamed:@"video"] identifier:nil handler:^(__kindof UIAction * _Nonnull action) {
-            [self bh_downloadVideoAction]; // دالة التحميل التي سنطورها لاحقاً لتدعم الدائرة
+            [self bh_downloadVideoAction]; 
         }];
         [actions addObject:downloadVideo];
     }
 
-    // 4. الخيارات المشتركة (تظهر في كلا الحالتين)
     UIAction *downloadMusic = [UIAction actionWithTitle:@"Download music" image:[UIImage systemImageNamed:@"music.note"] identifier:nil handler:^(__kindof UIAction * _Nonnull action) {
-        // سيتم ربطها لاحقاً بدالة تحميل الصوت
+        NSURL *downloadableURL = [((AWEMusicModel *)[videoModel music]).playURL bestURLtoDownload];
+        self.fileextension = [((AWEMusicModel *)[videoModel music]).playURL bestURLtoDownloadFormat];
+        if (downloadableURL) {
+            self.downloadManager = [[BHDownload alloc] init];
+            [self.downloadManager downloadFileWithURL:downloadableURL];
+            [self.downloadManager setDelegate:self];
+            
+            if (!self.progressCircle) {
+                self.progressCircle = [[BHTikTokProgressView alloc] initWithFrame:CGRectMake(0, 0, 50, 50)];
+                self.progressCircle.center = self.contentView.center;
+            }
+            self.progressCircle.progressLayer.hidden = NO;
+            self.progressCircle.statusImageView.hidden = YES;
+            [self.progressCircle updateProgress:0.0];
+            [self.contentView addSubview:self.progressCircle];
+            [self.contentView bringSubviewToFront:self.progressCircle];
+        }
     }];
     [actions addObject:downloadMusic];
 
     UIAction *copyDesc = [UIAction actionWithTitle:@"Copy description" image:[UIImage systemImageNamed:@"doc.on.doc"] identifier:nil handler:^(__kindof UIAction * _Nonnull action) {
-        // سيتم ربطها لاحقاً بدالة نسخ الوصف الحقيقي
+        NSString *video_description = [videoModel music_songName] ?: @"BHTikTok Options";
+        UIPasteboard *pasteboard = [UIPasteboard generalPasteboard];
+        pasteboard.string = video_description;
     }];
     [actions addObject:copyDesc];
+    
+    UIAction *copyVideoLink = [UIAction actionWithTitle:@"Copy video link" image:[UIImage systemImageNamed:@"link"] identifier:nil handler:^(__kindof UIAction * _Nonnull action) {
+        NSURL *downloadableURL = [[videoModel video].playURL bestURLtoDownload];
+        if (downloadableURL) {
+            UIPasteboard *pasteboard = [UIPasteboard generalPasteboard];
+            pasteboard.string = [downloadableURL absoluteString];
+        }
+    }];
+    [actions addObject:copyVideoLink];
 
-    // تجميع الخيارات في قائمة واحدة أنيقة
     return [UIMenu menuWithTitle:@"BHTikTok" children:actions];
 }
 
-%new - (void)downloaderProgress:(float)progress {
-    self.hud.detailTextLabel.text = [BHIManager getDownloadingPersent:progress];
-}
-%new - (void)downloaderDidFinishDownloadingAllFiles:(NSMutableArray<NSURL *> *)downloadedFilePaths {
-    [self.hud dismiss];
-    [BHIManager showSaveVC:downloadedFilePaths];
-}
-%new - (void)downloaderDidFailureWithError:(NSError *)error {
-    if (error) [self.hud dismiss];
-}
-
-%new - (void)downloadProgress:(float)progress {
-    self.hud.detailTextLabel.text = [BHIManager getDownloadingPersent:progress];
-}
-%new - (void)downloadDidFinish:(NSURL *)filePath Filename:(NSString *)fileName {
-    NSString *DocPath = NSSearchPathForDirectoriesInDomains(NSDocumentDirectory, NSUserDomainMask, true).firstObject;
-    NSFileManager *manager = [NSFileManager defaultManager];
-    NSURL *newFilePath = [[NSURL fileURLWithPath:DocPath] URLByAppendingPathComponent:[NSString stringWithFormat:@"%@.%@", NSUUID.UUID.UUIDString, self.fileextension]];
-    [manager moveItemAtURL:filePath toURL:newFilePath error:nil];
-    [self.hud dismiss];
-    [BHIManager showSaveVC:@[newFilePath]];
-}
-%new - (void)downloadDidFailureWithError:(NSError *)error {
-    if (error) [self.hud dismiss];
-}
-%end
-
-%hook AWEAwemeDetailTableViewCell
-%property (nonatomic, strong) JGProgressHUD *hud;
-%property(nonatomic, assign) BOOL elementsHidden;
-%property (nonatomic, retain) NSString *fileextension;
-
-- (void)configWithModel:(id)model {
-    %orig;
-    [self addHandleLongPress];
-    self.elementsHidden = false;
-    if ([BHIManager hideElementButton]) [self addHideElementButton];
-    if ([BHIManager downloadVideos]) [self addDownloadButton];
-}
-- (void)configureWithModel:(id)model {
-    %orig;
-    [self addHandleLongPress];
-    self.elementsHidden = false;
-    if ([BHIManager hideElementButton]) [self addHideElementButton];
-    if ([BHIManager downloadVideos]) [self addDownloadButton];
-}
-
-%new - (void)addHandleLongPress {
-    UILongPressGestureRecognizer *longPress = [[UILongPressGestureRecognizer alloc] initWithTarget:self action:@selector(handleLongPress:)];
-    longPress.minimumPressDuration = 0.4;
-    [self addGestureRecognizer:longPress];
-}
-
-%new - (void)handleLongPress:(UILongPressGestureRecognizer *)sender {
-    if (sender.state == UIGestureRecognizerStateBegan) {
-        if (![self.viewController isKindOfClass:%c(AWEAwemeDetailCellViewController)]) return;
-        AWEAwemeDetailCellViewController *rootVC = self.viewController;
-        NSString *video_description = rootVC.model.music_songName ?: @"BHTikTok Options";
-
-        // استخدام قائمة أبل الأصلية بدلاً من الشاشة البيضاء
-        UIAlertController *alert = [UIAlertController alertControllerWithTitle:@"BHTikTok" message:video_description preferredStyle:UIAlertControllerStyleActionSheet];
-
-        if ([BHIManager downloadVideos]) {
-            UIAlertAction *downloadVideo = [UIAlertAction actionWithTitle:@"Download video" style:UIAlertActionStyleDefault handler:^(UIAlertAction * action) {
-                [self bh_downloadVideoAction];
-            }];
-            [downloadVideo setValue:[UIImage systemImageNamed:@"arrow.down"] forKey:@"image"];
-            [alert addAction:downloadVideo];
+%new - (UIViewController *)bh_getPhotoAlbumViewController {
+    UIViewController *rootVC = [self respondsToSelector:@selector(viewController)] ? [self performSelector:@selector(viewController)] : nil;
+    if (rootVC) {
+        for (UIViewController *child in rootVC.childViewControllers) {
+            if ([child isKindOfClass:%c(AWEPlayPhotoAlbumViewController)]) {
+                return child;
+            }
         }
+    }
+    return nil;
+}
 
-        if ([BHIManager downloadMusics]) {
-            UIAlertAction *downloadMusic = [UIAlertAction actionWithTitle:@"Download music" style:UIAlertActionStyleDefault handler:^(UIAlertAction * action) {
-                NSURL *downloadableURL = [((AWEMusicModel *)rootVC.model.music).playURL bestURLtoDownload];
-                self.fileextension = [((AWEMusicModel *)rootVC.model.music).playURL bestURLtoDownloadFormat];
-                if (downloadableURL) {
-                    self.downloadManager = [[BHDownload alloc] init];
-					[self.downloadManager downloadFileWithURL:downloadableURL];
-					[self.downloadManager setDelegate:self];
-                    self.hud = [JGProgressHUD progressHUDWithStyle:JGProgressHUDStyleDark];
-                    self.hud.textLabel.text = @"Downloading";
-                    [self.hud showInView:self.viewController.view];
-                }
-            }];
-            [downloadMusic setValue:[UIImage systemImageNamed:@"music.note"] forKey:@"image"];
-            [alert addAction:downloadMusic];
+%new - (void)bh_downloadCurrentPhotoAction {
+    AWEPlayPhotoAlbumViewController *albumVC = (AWEPlayPhotoAlbumViewController *)[self bh_getPhotoAlbumViewController];
+    if (albumVC) {
+        NSUInteger currentIndex = [albumVC currentIndex];
+        id videoModel = [albumVC model];
+        id imageAlbum = [videoModel respondsToSelector:@selector(imageAlbumModel)] ? [videoModel performSelector:@selector(imageAlbumModel)] : nil;
+        NSArray *imagesArray = [imageAlbum respondsToSelector:@selector(imageAlbumItems)] ? [imageAlbum performSelector:@selector(imageAlbumItems)] : nil;
+        
+        if (imagesArray && currentIndex < imagesArray.count) {
+            NSLog(@"BHTikTok: Ready to download single photo at index %lu", (unsigned long)currentIndex);
         }
+    }
+}
 
-        if ([BHIManager copyMusicLink]) {
-            UIAlertAction *copyMusic = [UIAlertAction actionWithTitle:@"Copy music link" style:UIAlertActionStyleDefault handler:^(UIAlertAction * action) {
-                NSURL *url = [((AWEMusicModel *)rootVC.model.music).playURL bestURLtoDownload];
-                if (url) [UIPasteboard generalPasteboard].string = [url absoluteString];
-            }];
-            [copyMusic setValue:[UIImage systemImageNamed:@"link"] forKey:@"image"];
-            [alert addAction:copyMusic];
+%new - (void)bh_downloadAllPhotosAction {
+    AWEPlayPhotoAlbumViewController *albumVC = (AWEPlayPhotoAlbumViewController *)[self bh_getPhotoAlbumViewController];
+    if (albumVC) {
+        id videoModel = [albumVC model];
+        id imageAlbum = [videoModel respondsToSelector:@selector(imageAlbumModel)] ? [videoModel performSelector:@selector(imageAlbumModel)] : nil;
+        NSArray *imagesArray = [imageAlbum respondsToSelector:@selector(imageAlbumItems)] ? [imageAlbum performSelector:@selector(imageAlbumItems)] : nil;
+        
+        if (imagesArray && imagesArray.count > 0) {
+            NSLog(@"BHTikTok: Ready to download ALL %lu photos", (unsigned long)imagesArray.count);
         }
-
-        if ([BHIManager copyVideoLink]) {
-            UIAlertAction *copyVideo = [UIAlertAction actionWithTitle:@"Copy video link" style:UIAlertActionStyleDefault handler:^(UIAlertAction * action) {
-                NSURL *url = [rootVC.model.video.playURL bestURLtoDownload];
-                if (url) [UIPasteboard generalPasteboard].string = [url absoluteString];
-            }];
-            [copyVideo setValue:[UIImage systemImageNamed:@"link"] forKey:@"image"];
-            [alert addAction:copyVideo];
-        }
-
-        // ميزة نسخ الوصف
-        if ([BHIManager copyVideoDecription]) {
-            UIAlertAction *copyDesc = [UIAlertAction actionWithTitle:@"Copy description" style:UIAlertActionStyleDefault handler:^(UIAlertAction * action) {
-                [UIPasteboard generalPasteboard].string = video_description;
-            }];
-            [copyDesc setValue:[UIImage systemImageNamed:@"doc.on.doc"] forKey:@"image"];
-            [alert addAction:copyDesc];
-        }
-
-        UIAlertAction *cancel = [UIAlertAction actionWithTitle:@"Cancel" style:UIAlertActionStyleCancel handler:nil];
-        [alert addAction:cancel];
-
-        [self.viewController presentViewController:alert animated:YES completion:nil];
     }
 }
 
 %new - (void)bh_downloadVideoAction {
-    if (![self.viewController isKindOfClass:%c(AWEAwemeDetailCellViewController)]) return;
-    AWEAwemeDetailCellViewController *rootVC = self.viewController;
-    NSURL *downloadableURL = [rootVC.model.video.playURL bestURLtoDownload];
-    self.fileextension = [rootVC.model.video.playURL bestURLtoDownloadFormat];
+    AWEAwemeModel *videoModel = [self respondsToSelector:@selector(model)] ? [self valueForKey:@"model"] : [self valueForKey:@"aweme"];
+    NSURL *downloadableURL = [videoModel.video.playURL bestURLtoDownload];
+    self.fileextension = [videoModel.video.playURL bestURLtoDownloadFormat];
+    
     if (downloadableURL) {
         self.downloadManager = [[BHDownload alloc] init];
 		[self.downloadManager downloadFileWithURL:downloadableURL];
 		[self.downloadManager setDelegate:self];
-        self.hud = [JGProgressHUD progressHUDWithStyle:JGProgressHUDStyleDark];
-        self.hud.textLabel.text = @"Downloading";
-        [self.hud showInView:self.viewController.view];
-    }
-}
-
-%new - (void)addDownloadButton {
-    UIButton *downloadButton = [self.contentView viewWithTag:998];
-    if (!downloadButton) {
-        downloadButton = [UIButton buttonWithType:UIButtonTypeSystem];
-        [downloadButton setTag:998];
-        [downloadButton setTranslatesAutoresizingMaskIntoConstraints:NO];
-        [downloadButton addTarget:self action:@selector(bh_downloadVideoAction) forControlEvents:UIControlEventTouchUpInside];
-        [downloadButton setImage:[UIImage systemImageNamed:@"arrow.down.circle.fill"] forState:UIControlStateNormal];
-        [downloadButton setTintColor:[UIColor whiteColor]];
         
-        [self.contentView addSubview:downloadButton];
-        [self.contentView bringSubviewToFront:downloadButton];
-        
-        UIView *hideButton = [self.contentView viewWithTag:999];
-        if (hideButton) {
-            [NSLayoutConstraint activateConstraints:@[
-                [downloadButton.topAnchor constraintEqualToAnchor:hideButton.bottomAnchor constant:15],
-                [downloadButton.trailingAnchor constraintEqualToAnchor:self.contentView.safeAreaLayoutGuide.trailingAnchor constant:-10],
-                [downloadButton.widthAnchor constraintEqualToConstant:30],
-                [downloadButton.heightAnchor constraintEqualToConstant:30],
-            ]];
-        } else {
-            [NSLayoutConstraint activateConstraints:@[
-                [downloadButton.topAnchor constraintEqualToAnchor:self.contentView.safeAreaLayoutGuide.topAnchor constant:95],
-                [downloadButton.trailingAnchor constraintEqualToAnchor:self.contentView.safeAreaLayoutGuide.trailingAnchor constant:-10],
-                [downloadButton.widthAnchor constraintEqualToConstant:30],
-                [downloadButton.heightAnchor constraintEqualToConstant:30],
-            ]];
+        if (!self.progressCircle) {
+            self.progressCircle = [[BHTikTokProgressView alloc] initWithFrame:CGRectMake(0, 0, 50, 50)];
+            self.progressCircle.center = self.contentView.center;
         }
+        self.progressCircle.progressLayer.hidden = NO;
+        self.progressCircle.statusImageView.hidden = YES;
+        [self.progressCircle updateProgress:0.0];
+        [self.contentView addSubview:self.progressCircle];
+        [self.contentView bringSubviewToFront:self.progressCircle];
     }
 }
 
@@ -915,134 +687,122 @@ static BOOL isAuthenticationShowed = FALSE;
         [hideElementButton addTarget:self action:@selector(hideElementButtonHandler:) forControlEvents:UIControlEventTouchUpInside];
         [hideElementButton setTintColor:[UIColor whiteColor]];
         
-        // إضافته للواجهة ورفعه للأعلى لكي لا يختفي تحت الفيديو
         [self.contentView addSubview:hideElementButton];
         [self.contentView bringSubviewToFront:hideElementButton];
         
         [NSLayoutConstraint activateConstraints:@[
             [hideElementButton.topAnchor constraintEqualToAnchor:self.contentView.safeAreaLayoutGuide.topAnchor constant:50],
             [hideElementButton.trailingAnchor constraintEqualToAnchor:self.contentView.safeAreaLayoutGuide.trailingAnchor constant:-10],
-            [hideElementButton.widthAnchor constraintEqualToConstant:30],
-            [hideElementButton.heightAnchor constraintEqualToConstant:30],
+            [hideElementButton.widthAnchor constraintEqualToConstant:35],
+            [hideElementButton.heightAnchor constraintEqualToConstant:35],
         ]];
     }
     
-    // تحديث الأيقونة
     [hideElementButton setImage:[UIImage systemImageNamed:self.elementsHidden ? @"eye.fill" : @"eye.slash.fill"] forState:UIControlStateNormal];
 }
 
 %new - (void)hideElementButtonHandler:(UIButton *)sender {
-    // 1. عكس حالة الإخفاء الحالية
     self.elementsHidden = !self.elementsHidden;
-    
-    // 2. تحديث أيقونة زر العين استجابةً للضغطة
     NSString *iconName = self.elementsHidden ? @"eye.slash.fill" : @"eye.fill";
     [sender setImage:[UIImage systemImageNamed:iconName] forState:UIControlStateNormal];
     
-    // 3. جلب المتحكم الرئيسي للصفحة (Controller)
     UIViewController *rootVC = [self respondsToSelector:@selector(viewController)] ? [self performSelector:@selector(viewController)] : nil;
     
-    // 4. التأكد من أننا داخل صفحة الفيديوهات الرئيسية (Feed)
     if ([rootVC isKindOfClass:%c(AWENewFeedTableViewController)]) {
         AWENewFeedTableViewController *feedVC = (AWENewFeedTableViewController *)rootVC;
-        
-        // 5. استدعاء دالة "الوضع الصافي" الأصلية الخاصة بتيك توك بأمان تام
         if ([feedVC respondsToSelector:@selector(setPureMode:withAnimated:)]) {
             [feedVC setPureMode:self.elementsHidden withAnimated:YES];
         } else if ([feedVC respondsToSelector:@selector(setPureMode:)]) {
-            // خطة بديلة للإصدارات التي قد لا تتطلب متغير الأنيميشن
             [feedVC setPureMode:self.elementsHidden];
         }
     }
 }
 
 %new - (void)downloadProgress:(float)progress {
-    self.hud.detailTextLabel.text = [BHIManager getDownloadingPersent:progress];
+    [self.progressCircle updateProgress:progress];
 }
+
 %new - (void)downloadDidFinish:(NSURL *)filePath Filename:(NSString *)fileName {
-    NSString *DocPath = NSSearchPathForDirectoriesInDomains(NSDocumentDirectory, NSUserDomainMask, true).firstObject;
-    NSFileManager *manager = [NSFileManager defaultManager];
-    NSURL *newFilePath = [[NSURL fileURLWithPath:DocPath] URLByAppendingPathComponent:[NSString stringWithFormat:@"%@.%@", NSUUID.UUID.UUIDString, self.fileextension]];
-    [manager moveItemAtURL:filePath toURL:newFilePath error:nil];
-    [self.hud dismiss];
-    [BHIManager showSaveVC:@[newFilePath]];
+    dispatch_async(dispatch_get_main_queue(), ^{
+        [self.progressCircle showSuccess];
+        
+        NSString *DocPath = NSSearchPathForDirectoriesInDomains(NSDocumentDirectory, NSUserDomainMask, true).firstObject;
+        NSFileManager *manager = [NSFileManager defaultManager];
+        NSURL *newFilePath = [[NSURL fileURLWithPath:DocPath] URLByAppendingPathComponent:[NSString stringWithFormat:@"%@.%@", NSUUID.UUID.UUIDString, self.fileextension]];
+        [manager moveItemAtURL:filePath toURL:newFilePath error:nil];
+        
+        [BHIManager showSaveVC:@[newFilePath]];
+    });
 }
+
 %new - (void)downloadDidFailureWithError:(NSError *)error {
-    if (error) [self.hud dismiss];
+    dispatch_async(dispatch_get_main_queue(), ^{
+        if (error) {
+            [self.progressCircle showError];
+        }
+    });
+}
+
+%new - (void)downloaderProgress:(float)progress {
+    [self.progressCircle updateProgress:progress];
+}
+
+%new - (void)downloaderDidFinishDownloadingAllFiles:(NSMutableArray<NSURL *> *)downloadedFilePaths {
+    dispatch_async(dispatch_get_main_queue(), ^{
+        [self.progressCircle showSuccess];
+        [BHIManager showSaveVC:downloadedFilePaths];
+    });
+}
+
+%new - (void)downloaderDidFailureWithError:(NSError *)error {
+    dispatch_async(dispatch_get_main_queue(), ^{
+        if (error) {
+            [self.progressCircle showError];
+        }
+    });
 }
 %end
 
-%hook TTKStoryDetailTableViewCell
-// (نفس المنطق المطبق في الأعلى، قمت بتوحيده لتفادي أي مشاكل مستقبلية في القصص)
-%property (nonatomic, strong) JGProgressHUD *hud;
+%hook AWEAwemeDetailTableViewCell
+%property (nonatomic, strong) BHTikTokProgressView *progressCircle;
 %property(nonatomic, assign) BOOL elementsHidden;
 %property (nonatomic, retain) NSString *fileextension;
+%property (nonatomic, strong) BHDownload *downloadManager;
 
 - (void)configWithModel:(id)model {
     %orig;
-    [self addHandleLongPress];
     self.elementsHidden = false;
     if ([BHIManager hideElementButton]) [self addHideElementButton];
     if ([BHIManager downloadVideos]) [self addDownloadButton];
 }
+
 - (void)configureWithModel:(id)model {
     %orig;
-    [self addHandleLongPress];
     self.elementsHidden = false;
     if ([BHIManager hideElementButton]) [self addHideElementButton];
     if ([BHIManager downloadVideos]) [self addDownloadButton];
-}
-
-%new - (void)addHandleLongPress {
-    UILongPressGestureRecognizer *longPress = [[UILongPressGestureRecognizer alloc] initWithTarget:self action:@selector(handleLongPress:)];
-    longPress.minimumPressDuration = 0.4;
-    [self addGestureRecognizer:longPress];
-}
-
-%new - (void)handleLongPress:(UILongPressGestureRecognizer *)sender {
-    if (sender.state == UIGestureRecognizerStateBegan) {
-        if (![self.viewController isKindOfClass:%c(TTKStoryDetailContainerViewController)]) return;
-        TTKStoryDetailContainerViewController *rootVC = self.viewController;
-        NSString *video_description = rootVC.model.currentPlayingStory.music_songName ?: @"BHTikTok Options";
-
-        UIAlertController *alert = [UIAlertController alertControllerWithTitle:@"BHTikTok" message:video_description preferredStyle:UIAlertControllerStyleActionSheet];
-
-        if ([BHIManager downloadVideos]) {
-            UIAlertAction *downloadVideo = [UIAlertAction actionWithTitle:@"Download video" style:UIAlertActionStyleDefault handler:^(UIAlertAction * action) {
-                [self bh_downloadVideoAction];
-            }];
-            [downloadVideo setValue:[UIImage systemImageNamed:@"arrow.down"] forKey:@"image"];
-            [alert addAction:downloadVideo];
-        }
-        
-        // ... بقية الأزرار كما في الأعلى للقصص
-        if ([BHIManager copyVideoDecription]) {
-            UIAlertAction *copyDesc = [UIAlertAction actionWithTitle:@"Copy description" style:UIAlertActionStyleDefault handler:^(UIAlertAction * action) {
-                [UIPasteboard generalPasteboard].string = video_description;
-            }];
-            [copyDesc setValue:[UIImage systemImageNamed:@"doc.on.doc"] forKey:@"image"];
-            [alert addAction:copyDesc];
-        }
-
-        UIAlertAction *cancel = [UIAlertAction actionWithTitle:@"Cancel" style:UIAlertActionStyleCancel handler:nil];
-        [alert addAction:cancel];
-
-        [self.viewController presentViewController:alert animated:YES completion:nil];
-    }
 }
 
 %new - (void)bh_downloadVideoAction {
-    if (![self.viewController isKindOfClass:%c(TTKStoryDetailContainerViewController)]) return;
-    TTKStoryDetailContainerViewController *rootVC = self.viewController;
-    NSURL *downloadableURL = [rootVC.model.currentPlayingStory.video.playURL bestURLtoDownload];
-    self.fileextension = [rootVC.model.currentPlayingStory.video.playURL bestURLtoDownloadFormat];
+    if (![self.viewController isKindOfClass:%c(AWEAwemeDetailCellViewController)]) return;
+    AWEAwemeDetailCellViewController *rootVC = (AWEAwemeDetailCellViewController *)self.viewController;
+    NSURL *downloadableURL = [rootVC.model.video.playURL bestURLtoDownload];
+    self.fileextension = [rootVC.model.video.playURL bestURLtoDownloadFormat];
+    
     if (downloadableURL) {
         self.downloadManager = [[BHDownload alloc] init];
-[self.downloadManager downloadFileWithURL:downloadableURL];
-[self.downloadManager setDelegate:self];
-        self.hud = [JGProgressHUD progressHUDWithStyle:JGProgressHUDStyleDark];
-        self.hud.textLabel.text = @"Downloading";
-        [self.hud showInView:self.viewController.view];
+		[self.downloadManager downloadFileWithURL:downloadableURL];
+		[self.downloadManager setDelegate:self];
+        
+        if (!self.progressCircle) {
+            self.progressCircle = [[BHTikTokProgressView alloc] initWithFrame:CGRectMake(0, 0, 50, 50)];
+            self.progressCircle.center = self.contentView.center;
+        }
+        self.progressCircle.progressLayer.hidden = NO;
+        self.progressCircle.statusImageView.hidden = YES;
+        [self.progressCircle updateProgress:0.0];
+        [self.contentView addSubview:self.progressCircle];
+        [self.contentView bringSubviewToFront:self.progressCircle];
     }
 }
 
@@ -1052,9 +812,14 @@ static BOOL isAuthenticationShowed = FALSE;
         downloadButton = [UIButton buttonWithType:UIButtonTypeSystem];
         [downloadButton setTag:998];
         [downloadButton setTranslatesAutoresizingMaskIntoConstraints:NO];
-        [downloadButton addTarget:self action:@selector(bh_downloadVideoAction) forControlEvents:UIControlEventTouchUpInside];
         [downloadButton setImage:[UIImage systemImageNamed:@"arrow.down.circle.fill"] forState:UIControlStateNormal];
         [downloadButton setTintColor:[UIColor whiteColor]];
+        
+        if (@available(iOS 14.0, *)) {
+            downloadButton.showsMenuAsPrimaryAction = YES;
+        } else {
+            [downloadButton addTarget:self action:@selector(bh_downloadVideoAction) forControlEvents:UIControlEventTouchUpInside];
+        }
         
         [self.contentView addSubview:downloadButton];
         [self.contentView bringSubviewToFront:downloadButton];
@@ -1064,18 +829,67 @@ static BOOL isAuthenticationShowed = FALSE;
             [NSLayoutConstraint activateConstraints:@[
                 [downloadButton.topAnchor constraintEqualToAnchor:hideButton.bottomAnchor constant:15],
                 [downloadButton.trailingAnchor constraintEqualToAnchor:self.contentView.safeAreaLayoutGuide.trailingAnchor constant:-10],
-                [downloadButton.widthAnchor constraintEqualToConstant:30],
-                [downloadButton.heightAnchor constraintEqualToConstant:30],
-            ]];
-        } else {
-            [NSLayoutConstraint activateConstraints:@[
-                [downloadButton.topAnchor constraintEqualToAnchor:self.contentView.safeAreaLayoutGuide.topAnchor constant:95],
-                [downloadButton.trailingAnchor constraintEqualToAnchor:self.contentView.safeAreaLayoutGuide.trailingAnchor constant:-10],
-                [downloadButton.widthAnchor constraintEqualToConstant:30],
-                [downloadButton.heightAnchor constraintEqualToConstant:30],
+                [downloadButton.widthAnchor constraintEqualToConstant:35],
+                [downloadButton.heightAnchor constraintEqualToConstant:35],
             ]];
         }
     }
+    
+    if (@available(iOS 14.0, *)) {
+        downloadButton.menu = [self bh_buildDownloadMenu];
+    }
+}
+
+%new - (UIMenu *)bh_buildDownloadMenu {
+    if (![self.viewController isKindOfClass:%c(AWEAwemeDetailCellViewController)]) return nil;
+    AWEAwemeDetailCellViewController *rootVC = (AWEAwemeDetailCellViewController *)self.viewController;
+    AWEAwemeModel *videoModel = rootVC.model;
+    
+    NSMutableArray *actions = [NSMutableArray array];
+
+    UIAction *downloadVideo = [UIAction actionWithTitle:@"Download video" image:[UIImage systemImageNamed:@"video"] identifier:nil handler:^(__kindof UIAction * _Nonnull action) {
+        [self bh_downloadVideoAction]; 
+    }];
+    [actions addObject:downloadVideo];
+
+    UIAction *downloadMusic = [UIAction actionWithTitle:@"Download music" image:[UIImage systemImageNamed:@"music.note"] identifier:nil handler:^(__kindof UIAction * _Nonnull action) {
+        NSURL *downloadableURL = [((AWEMusicModel *)[videoModel music]).playURL bestURLtoDownload];
+        self.fileextension = [((AWEMusicModel *)[videoModel music]).playURL bestURLtoDownloadFormat];
+        if (downloadableURL) {
+            self.downloadManager = [[BHDownload alloc] init];
+            [self.downloadManager downloadFileWithURL:downloadableURL];
+            [self.downloadManager setDelegate:self];
+            
+            if (!self.progressCircle) {
+                self.progressCircle = [[BHTikTokProgressView alloc] initWithFrame:CGRectMake(0, 0, 50, 50)];
+                self.progressCircle.center = self.contentView.center;
+            }
+            self.progressCircle.progressLayer.hidden = NO;
+            self.progressCircle.statusImageView.hidden = YES;
+            [self.progressCircle updateProgress:0.0];
+            [self.contentView addSubview:self.progressCircle];
+            [self.contentView bringSubviewToFront:self.progressCircle];
+        }
+    }];
+    [actions addObject:downloadMusic];
+
+    UIAction *copyDesc = [UIAction actionWithTitle:@"Copy description" image:[UIImage systemImageNamed:@"doc.on.doc"] identifier:nil handler:^(__kindof UIAction * _Nonnull action) {
+        NSString *video_description = [videoModel music_songName] ?: @"BHTikTok Options";
+        UIPasteboard *pasteboard = [UIPasteboard generalPasteboard];
+        pasteboard.string = video_description;
+    }];
+    [actions addObject:copyDesc];
+    
+    UIAction *copyVideoLink = [UIAction actionWithTitle:@"Copy video link" image:[UIImage systemImageNamed:@"link"] identifier:nil handler:^(__kindof UIAction * _Nonnull action) {
+        NSURL *downloadableURL = [[videoModel video].playURL bestURLtoDownload];
+        if (downloadableURL) {
+            UIPasteboard *pasteboard = [UIPasteboard generalPasteboard];
+            pasteboard.string = [downloadableURL absoluteString];
+        }
+    }];
+    [actions addObject:copyVideoLink];
+
+    return [UIMenu menuWithTitle:@"BHTikTok" children:actions];
 }
 
 %new - (void)addHideElementButton {
@@ -1087,28 +901,211 @@ static BOOL isAuthenticationShowed = FALSE;
         [hideElementButton addTarget:self action:@selector(hideElementButtonHandler:) forControlEvents:UIControlEventTouchUpInside];
         [hideElementButton setTintColor:[UIColor whiteColor]];
         
-        // إضافته للواجهة ورفعه للأعلى لكي لا يختفي تحت الفيديو
         [self.contentView addSubview:hideElementButton];
         [self.contentView bringSubviewToFront:hideElementButton];
         
         [NSLayoutConstraint activateConstraints:@[
             [hideElementButton.topAnchor constraintEqualToAnchor:self.contentView.safeAreaLayoutGuide.topAnchor constant:50],
             [hideElementButton.trailingAnchor constraintEqualToAnchor:self.contentView.safeAreaLayoutGuide.trailingAnchor constant:-10],
-            [hideElementButton.widthAnchor constraintEqualToConstant:30],
-            [hideElementButton.heightAnchor constraintEqualToConstant:30],
+            [hideElementButton.widthAnchor constraintEqualToConstant:35],
+            [hideElementButton.heightAnchor constraintEqualToConstant:35],
         ]];
     }
     
-    // تحديث الأيقونة
     [hideElementButton setImage:[UIImage systemImageNamed:self.elementsHidden ? @"eye.fill" : @"eye.slash.fill"] forState:UIControlStateNormal];
 }
+
+%new - (void)hideElementButtonHandler:(UIButton *)sender {
+    self.elementsHidden = !self.elementsHidden;
+    NSString *iconName = self.elementsHidden ? @"eye.slash.fill" : @"eye.fill";
+    [sender setImage:[UIImage systemImageNamed:iconName] forState:UIControlStateNormal];
+    
+    UIViewController *rootVC = [self respondsToSelector:@selector(viewController)] ? [self performSelector:@selector(viewController)] : nil;
+    
+    if ([rootVC isKindOfClass:%c(AWENewFeedTableViewController)]) {
+        AWENewFeedTableViewController *feedVC = (AWENewFeedTableViewController *)rootVC;
+        if ([feedVC respondsToSelector:@selector(setPureMode:withAnimated:)]) {
+            [feedVC setPureMode:self.elementsHidden withAnimated:YES];
+        } else if ([feedVC respondsToSelector:@selector(setPureMode:)]) {
+            [feedVC setPureMode:self.elementsHidden];
+        }
+    }
+}
+
+%new - (void)downloadProgress:(float)progress {
+    [self.progressCircle updateProgress:progress];
+}
+
+%new - (void)downloadDidFinish:(NSURL *)filePath Filename:(NSString *)fileName {
+    dispatch_async(dispatch_get_main_queue(), ^{
+        [self.progressCircle showSuccess];
+        
+        NSString *DocPath = NSSearchPathForDirectoriesInDomains(NSDocumentDirectory, NSUserDomainMask, true).firstObject;
+        NSFileManager *manager = [NSFileManager defaultManager];
+        NSURL *newFilePath = [[NSURL fileURLWithPath:DocPath] URLByAppendingPathComponent:[NSString stringWithFormat:@"%@.%@", NSUUID.UUID.UUIDString, self.fileextension]];
+        [manager moveItemAtURL:filePath toURL:newFilePath error:nil];
+        
+        [BHIManager showSaveVC:@[newFilePath]];
+    });
+}
+
+%new - (void)downloadDidFailureWithError:(NSError *)error {
+    dispatch_async(dispatch_get_main_queue(), ^{
+        if (error) {
+            [self.progressCircle showError];
+        }
+    });
+}
+
+%new - (void)downloaderProgress:(float)progress {
+    [self.progressCircle updateProgress:progress];
+}
+
+%new - (void)downloaderDidFinishDownloadingAllFiles:(NSMutableArray<NSURL *> *)downloadedFilePaths {
+    dispatch_async(dispatch_get_main_queue(), ^{
+        [self.progressCircle showSuccess];
+        [BHIManager showSaveVC:downloadedFilePaths];
+    });
+}
+
+%new - (void)downloaderDidFailureWithError:(NSError *)error {
+    dispatch_async(dispatch_get_main_queue(), ^{
+        if (error) {
+            [self.progressCircle showError];
+        }
+    });
+}
+%end
+
+%hook TTKStoryDetailTableViewCell
+%property (nonatomic, strong) BHTikTokProgressView *progressCircle;
+%property(nonatomic, assign) BOOL elementsHidden;
+%property (nonatomic, retain) NSString *fileextension;
+%property (nonatomic, strong) BHDownload *downloadManager;
+
+- (void)configWithModel:(id)model {
+    %orig;
+    self.elementsHidden = false;
+    if ([BHIManager hideElementButton]) [self addHideElementButton];
+    if ([BHIManager downloadVideos]) [self addDownloadButton];
+}
+
+- (void)configureWithModel:(id)model {
+    %orig;
+    self.elementsHidden = false;
+    if ([BHIManager hideElementButton]) [self addHideElementButton];
+    if ([BHIManager downloadVideos]) [self addDownloadButton];
+}
+
+%new - (void)bh_downloadVideoAction {
+    if (![self.viewController isKindOfClass:%c(TTKStoryDetailContainerViewController)]) return;
+    id rootVC = self.viewController;
+    NSURL *downloadableURL = [[rootVC model].currentPlayingStory.video.playURL bestURLtoDownload];
+    self.fileextension = [[rootVC model].currentPlayingStory.video.playURL bestURLtoDownloadFormat];
+    
+    if (downloadableURL) {
+        self.downloadManager = [[BHDownload alloc] init];
+        [self.downloadManager downloadFileWithURL:downloadableURL];
+        [self.downloadManager setDelegate:self];
+        
+        if (!self.progressCircle) {
+            self.progressCircle = [[BHTikTokProgressView alloc] initWithFrame:CGRectMake(0, 0, 50, 50)];
+            self.progressCircle.center = self.contentView.center;
+        }
+        self.progressCircle.progressLayer.hidden = NO;
+        self.progressCircle.statusImageView.hidden = YES;
+        [self.progressCircle updateProgress:0.0];
+        [self.contentView addSubview:self.progressCircle];
+        [self.contentView bringSubviewToFront:self.progressCircle];
+    }
+}
+
+%new - (void)addDownloadButton {
+    UIButton *downloadButton = [self.contentView viewWithTag:998];
+    if (!downloadButton) {
+        downloadButton = [UIButton buttonWithType:UIButtonTypeSystem];
+        [downloadButton setTag:998];
+        [downloadButton setTranslatesAutoresizingMaskIntoConstraints:NO];
+        [downloadButton setImage:[UIImage systemImageNamed:@"arrow.down.circle.fill"] forState:UIControlStateNormal];
+        [downloadButton setTintColor:[UIColor whiteColor]];
+        
+        if (@available(iOS 14.0, *)) {
+            downloadButton.showsMenuAsPrimaryAction = YES;
+        } else {
+            [downloadButton addTarget:self action:@selector(bh_downloadVideoAction) forControlEvents:UIControlEventTouchUpInside];
+        }
+        
+        [self.contentView addSubview:downloadButton];
+        [self.contentView bringSubviewToFront:downloadButton];
+        
+        UIView *hideButton = [self.contentView viewWithTag:999];
+        if (hideButton) {
+            [NSLayoutConstraint activateConstraints:@[
+                [downloadButton.topAnchor constraintEqualToAnchor:hideButton.bottomAnchor constant:15],
+                [downloadButton.trailingAnchor constraintEqualToAnchor:self.contentView.safeAreaLayoutGuide.trailingAnchor constant:-10],
+                [downloadButton.widthAnchor constraintEqualToConstant:35],
+                [downloadButton.heightAnchor constraintEqualToConstant:35],
+            ]];
+        }
+    }
+    
+    if (@available(iOS 14.0, *)) {
+        downloadButton.menu = [self bh_buildDownloadMenu];
+    }
+}
+
+%new - (UIMenu *)bh_buildDownloadMenu {
+    if (![self.viewController isKindOfClass:%c(TTKStoryDetailContainerViewController)]) return nil;
+    id rootVC = self.viewController;
+    AWEAwemeModel *videoModel = [rootVC model].currentPlayingStory;
+    
+    NSMutableArray *actions = [NSMutableArray array];
+
+    UIAction *downloadVideo = [UIAction actionWithTitle:@"Download video" image:[UIImage systemImageNamed:@"video"] identifier:nil handler:^(__kindof UIAction * _Nonnull action) {
+        [self bh_downloadVideoAction]; 
+    }];
+    [actions addObject:downloadVideo];
+
+    UIAction *copyDesc = [UIAction actionWithTitle:@"Copy description" image:[UIImage systemImageNamed:@"doc.on.doc"] identifier:nil handler:^(__kindof UIAction * _Nonnull action) {
+        NSString *video_description = [videoModel music_songName] ?: @"BHTikTok Options";
+        UIPasteboard *pasteboard = [UIPasteboard generalPasteboard];
+        pasteboard.string = video_description;
+    }];
+    [actions addObject:copyDesc];
+
+    return [UIMenu menuWithTitle:@"BHTikTok" children:actions];
+}
+
+%new - (void)addHideElementButton {
+    UIButton *hideElementButton = [self.contentView viewWithTag:999];
+    if (!hideElementButton) {
+        hideElementButton = [UIButton buttonWithType:UIButtonTypeSystem];
+        [hideElementButton setTag:999];
+        [hideElementButton setTranslatesAutoresizingMaskIntoConstraints:NO];
+        [hideElementButton addTarget:self action:@selector(hideElementButtonHandler:) forControlEvents:UIControlEventTouchUpInside];
+        [hideElementButton setTintColor:[UIColor whiteColor]];
+        
+        [self.contentView addSubview:hideElementButton];
+        [self.contentView bringSubviewToFront:hideElementButton];
+        
+        [NSLayoutConstraint activateConstraints:@[
+            [hideElementButton.topAnchor constraintEqualToAnchor:self.contentView.safeAreaLayoutGuide.topAnchor constant:50],
+            [hideElementButton.trailingAnchor constraintEqualToAnchor:self.contentView.safeAreaLayoutGuide.trailingAnchor constant:-10],
+            [hideElementButton.widthAnchor constraintEqualToConstant:35],
+            [hideElementButton.heightAnchor constraintEqualToConstant:35],
+        ]];
+    }
+    
+    [hideElementButton setImage:[UIImage systemImageNamed:self.elementsHidden ? @"eye.fill" : @"eye.slash.fill"] forState:UIControlStateNormal];
+}
+
 %new - (void)hideElementButtonHandler:(UIButton *)sender {
     self.elementsHidden = !self.elementsHidden;
     [sender setImage:[UIImage systemImageNamed:self.elementsHidden ? @"eye.fill" : @"eye.slash.fill"] forState:UIControlStateNormal];
     
-    TTKStoryDetailContainerViewController *rootVC = self.viewController;
+    id rootVC = self.viewController;
     if ([rootVC respondsToSelector:@selector(interactionController)]) {
-        id interactionController = rootVC.interactionController;
+        id interactionController = [rootVC interactionController];
         if ([interactionController respondsToSelector:@selector(hideAllElements:exceptArray:)]) {
             [interactionController hideAllElements:self.elementsHidden exceptArray:nil];
             return;
@@ -1125,25 +1122,51 @@ static BOOL isAuthenticationShowed = FALSE;
         }
     }];
 }
+
 %new - (void)downloadProgress:(float)progress {
-    self.hud.detailTextLabel.text = [BHIManager getDownloadingPersent:progress];
+    [self.progressCircle updateProgress:progress];
 }
+
 %new - (void)downloadDidFinish:(NSURL *)filePath Filename:(NSString *)fileName {
-    NSString *DocPath = NSSearchPathForDirectoriesInDomains(NSDocumentDirectory, NSUserDomainMask, true).firstObject;
-    NSFileManager *manager = [NSFileManager defaultManager];
-    NSURL *newFilePath = [[NSURL fileURLWithPath:DocPath] URLByAppendingPathComponent:[NSString stringWithFormat:@"%@.%@", NSUUID.UUID.UUIDString, self.fileextension]];
-    [manager moveItemAtURL:filePath toURL:newFilePath error:nil];
-    [self.hud dismiss];
-    [BHIManager showSaveVC:@[newFilePath]];
+    dispatch_async(dispatch_get_main_queue(), ^{
+        [self.progressCircle showSuccess];
+        
+        NSString *DocPath = NSSearchPathForDirectoriesInDomains(NSDocumentDirectory, NSUserDomainMask, true).firstObject;
+        NSFileManager *manager = [NSFileManager defaultManager];
+        NSURL *newFilePath = [[NSURL fileURLWithPath:DocPath] URLByAppendingPathComponent:[NSString stringWithFormat:@"%@.%@", NSUUID.UUID.UUIDString, self.fileextension]];
+        [manager moveItemAtURL:filePath toURL:newFilePath error:nil];
+        
+        [BHIManager showSaveVC:@[newFilePath]];
+    });
 }
+
 %new - (void)downloadDidFailureWithError:(NSError *)error {
-    if (error) [self.hud dismiss];
+    dispatch_async(dispatch_get_main_queue(), ^{
+        if (error) {
+            [self.progressCircle showError];
+        }
+    });
+}
+
+%new - (void)downloaderProgress:(float)progress {
+    [self.progressCircle updateProgress:progress];
+}
+
+%new - (void)downloaderDidFinishDownloadingAllFiles:(NSMutableArray<NSURL *> *)downloadedFilePaths {
+    dispatch_async(dispatch_get_main_queue(), ^{
+        [self.progressCircle showSuccess];
+        [BHIManager showSaveVC:downloadedFilePaths];
+    });
+}
+
+%new - (void)downloaderDidFailureWithError:(NSError *)error {
+    dispatch_async(dispatch_get_main_queue(), ^{
+        if (error) {
+            [self.progressCircle showError];
+        }
+    });
 }
 %end
-
-// ==========================================
-// 6. أدوات التحميل وتخطي حماية النظام
-// ==========================================
 
 %hook AWEURLModel
 %new - (NSString *)bestURLtoDownloadFormat {
@@ -1253,7 +1276,6 @@ static BOOL isAuthenticationShowed = FALSE;
 %hook MSConfigOV
 - (id)setMode { return (id (^)(id)) ^{ }; }
 %end
-
 
 %ctor {
     jailbreakPaths = @[
