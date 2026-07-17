@@ -81,6 +81,16 @@
 - (void)setPureMode:(BOOL)arg1;
 @end
 
+@interface AWEPlayPhotoAlbumViewController : UIViewController
+- (NSUInteger)currentIndex;
+- (id)model; // يعيد كائن AWEAwemeModel
+@end
+
+// تعريف الموديل الأساسي للوصول لبيانات الصور
+@interface AWEAwemeModel : NSObject
+- (id)imageAlbumModel; 
+@end
+
 NSArray *jailbreakPaths;
 
 static void showConfirmation(void (^okHandler)(void)) {
@@ -545,6 +555,59 @@ static BOOL isAuthenticationShowed = FALSE;
         self.hud.textLabel.text = @"Downloading";
         [self.hud showInView:self.viewController.view];
     }
+}
+
+%new - (void)bh_downloadCurrentPhotoAction {
+    AWEPlayPhotoAlbumViewController *albumVC = [self bh_getPhotoAlbumViewController];
+    
+    if (albumVC) {
+        NSUInteger currentIndex = [albumVC currentIndex];
+        id videoModel = [albumVC model];
+        
+        // جلب كائن ألبوم الصور
+        id imageAlbum = [videoModel respondsToSelector:@selector(imageAlbumModel)] ? [videoModel performSelector:@selector(imageAlbumModel)] : nil;
+        
+        // جلب مصفوفة الصور (سنحتاج لاحقاً للتأكد من اسم هذه المصفوفة في تيك توك)
+        NSArray *imagesArray = [imageAlbum respondsToSelector:@selector(imageAlbumItems)] ? [imageAlbum performSelector:@selector(imageAlbumItems)] : nil;
+        
+        if (imagesArray && currentIndex < imagesArray.count) {
+            id currentPhotoData = imagesArray[currentIndex];
+            
+            // هنا سيتم تمرير currentPhotoData إلى دائرة التحميل التي سنبرمجها
+            NSLog(@"BHTikTok: Ready to download single photo at index %lu", (unsigned long)currentIndex);
+        }
+    }
+}
+
+// دالة تحميل جميع الصور دفعة واحدة
+%new - (void)bh_downloadAllPhotosAction {
+    AWEPlayPhotoAlbumViewController *albumVC = [self bh_getPhotoAlbumViewController];
+    
+    if (albumVC) {
+        id videoModel = [albumVC model];
+        id imageAlbum = [videoModel respondsToSelector:@selector(imageAlbumModel)] ? [videoModel performSelector:@selector(imageAlbumModel)] : nil;
+        NSArray *imagesArray = [imageAlbum respondsToSelector:@selector(imageAlbumItems)] ? [imageAlbum performSelector:@selector(imageAlbumItems)] : nil;
+        
+        if (imagesArray && imagesArray.count > 0) {
+            // هنا سيتم عمل حلقة تكرارية (Loop) لتمرير جميع الصور إلى مدير التحميل
+            NSLog(@"BHTikTok: Ready to download ALL %lu photos", (unsigned long)imagesArray.count);
+        }
+    }
+}
+
+// دالة هندسية مساعدة: تبحث عن المتحكم الخاص بالصور داخل الشاشة
+%new - (AWEPlayPhotoAlbumViewController *)bh_getPhotoAlbumViewController {
+    UIViewController *rootVC = [self respondsToSelector:@selector(viewController)] ? [self valueForKey:@"viewController"] : nil;
+    
+    if (rootVC) {
+        // تيك توك يزرع متحكم الصور كـ Child داخل المتحكم الأساسي، سنبحث عنه هنا:
+        for (UIViewController *child in rootVC.childViewControllers) {
+            if ([child isKindOfClass:%c(AWEPlayPhotoAlbumViewController)]) {
+                return (AWEPlayPhotoAlbumViewController *)child;
+            }
+        }
+    }
+    return nil;
 }
 
 // رسم زر العين
