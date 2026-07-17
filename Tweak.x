@@ -404,63 +404,7 @@ static BOOL isAuthenticationShowed = FALSE;
     }
     return self;
 }
-%new - (void)addHandleLongPress {
-    UILongPressGestureRecognizer *longPress = [[UILongPressGestureRecognizer alloc] initWithTarget:self action:@selector(handleLongPress:)];
-    longPress.minimumPressDuration = 0.3;
-    [self addGestureRecognizer:longPress];
-}
-%new - (void)handleLongPress:(UILongPressGestureRecognizer *)sender {
-    if (sender.state == UIGestureRecognizerStateBegan) {
-        id rootVC = self.yy_viewController;
-        AWEUserModel *userModel = nil;
-        if ([rootVC respondsToSelector:@selector(user)]) {
-            userModel = [rootVC valueForKey:@"user"];
-        } else if ([self respondsToSelector:@selector(user)]) {
-            userModel = [self valueForKey:@"user"];
-        }
 
-        if (userModel) {
-            TUXActionSheetController *alert = [[%c(TUXActionSheetController) alloc] initWithTitle:@"Select option to copy."];
-            
-            if (userModel.socialName) {
-                NSString *accountName = userModel.socialName;
-                [alert addAction:[[%c(TUXActionSheetAction) alloc] initWithStyle:0 title:@"Copy social name" subtitle:accountName image:[UIImage systemImageNamed:@"clipboard"] imageLabel:nil handler:^(TUXActionSheetAction * action) {
-                    UIPasteboard *pasteboard = [UIPasteboard generalPasteboard];
-                    pasteboard.string = accountName;
-                    [%c(AWEToast) showSuccess:@"Copied"];
-                }]];
-            }
-            if (userModel.nickname) {
-                NSString *nickName = userModel.nickname;
-                [alert addAction:[[%c(TUXActionSheetAction) alloc] initWithStyle:0 title:@"Copy nick name" subtitle:nickName image:[UIImage systemImageNamed:@"clipboard"] imageLabel:nil handler:^(TUXActionSheetAction * action) {
-                    UIPasteboard *pasteboard = [UIPasteboard generalPasteboard];
-                    pasteboard.string = nickName;
-                    [%c(AWEToast) showSuccess:@"Copied"];
-                }]];
-            }
-            if (userModel.signature) {
-                NSString *bio = userModel.signature;
-                [alert addAction:[[%c(TUXActionSheetAction) alloc] initWithStyle:0 title:@"Copy bio" subtitle:nil image:[UIImage systemImageNamed:@"clipboard"] imageLabel:nil handler:^(TUXActionSheetAction * action) {
-                    UIPasteboard *pasteboard = [UIPasteboard generalPasteboard];
-                    pasteboard.string = bio;
-                    [%c(AWEToast) showSuccess:@"Copied"];
-                }]];
-            }
-            if (userModel.bioUrl) {
-                NSString *bioURL = userModel.bioUrl;
-                [alert addAction:[[%c(TUXActionSheetAction) alloc] initWithStyle:0 title:@"Copy URL in bio" subtitle:bioURL image:[UIImage systemImageNamed:@"clipboard"] imageLabel:nil handler:^(TUXActionSheetAction * action) {
-                    UIPasteboard *pasteboard = [UIPasteboard generalPasteboard];
-                    pasteboard.string = bioURL;
-                    [%c(AWEToast) showSuccess:@"Copied"];
-                }]];
-            }
-
-            [alert setTitle:@"Select option to copy."];
-            [alert setDismissOnDraggingDown:true];
-            [self.yy_viewController presentViewController:alert animated:YES completion:nil];
-        }
-    }
-}
 %end
 
 %hook TTKEnlargeAvatarViewController 
@@ -498,14 +442,12 @@ static BOOL isAuthenticationShowed = FALSE;
 
 - (void)configWithModel:(id)model {
     %orig;
-    [self addHandleLongPress];
     self.elementsHidden = false;
     if ([BHIManager hideElementButton]) [self addHideElementButton];
     if ([BHIManager downloadVideos]) [self addDownloadButton]; // إضافة زر التحميل
 }
 - (void)configureWithModel:(id)model {
     %orig;
-    [self addHandleLongPress];
     self.elementsHidden = false;
     if ([BHIManager hideElementButton]) [self addHideElementButton];
     if ([BHIManager downloadVideos]) [self addDownloadButton]; // إضافة زر التحميل
@@ -651,32 +593,87 @@ static BOOL isAuthenticationShowed = FALSE;
         downloadButton = [UIButton buttonWithType:UIButtonTypeSystem];
         [downloadButton setTag:998];
         [downloadButton setTranslatesAutoresizingMaskIntoConstraints:NO];
-        [downloadButton addTarget:self action:@selector(bh_downloadVideoAction) forControlEvents:UIControlEventTouchUpInside];
+        
+        // الأيقونة الافتراضية للزر
         [downloadButton setImage:[UIImage systemImageNamed:@"arrow.down.circle.fill"] forState:UIControlStateNormal];
         [downloadButton setTintColor:[UIColor whiteColor]];
+        
+        // تفعيل خاصية القائمة المستطيلة المدمجة (UIMenu) بضغطة واحدة
+        if (@available(iOS 14.0, *)) {
+            downloadButton.showsMenuAsPrimaryAction = YES;
+        } else {
+            // كخطة بديلة للإصدارات القديمة جداً
+            [downloadButton addTarget:self action:@selector(bh_downloadVideoAction) forControlEvents:UIControlEventTouchUpInside];
+        }
         
         [self.contentView addSubview:downloadButton];
         [self.contentView bringSubviewToFront:downloadButton];
         
+        // ضبط المسافات الهندسية ليكون تحت زر العين
         UIView *hideButton = [self.contentView viewWithTag:999];
         if (hideButton) {
             [NSLayoutConstraint activateConstraints:@[
                 [downloadButton.topAnchor constraintEqualToAnchor:hideButton.bottomAnchor constant:15],
                 [downloadButton.trailingAnchor constraintEqualToAnchor:self.contentView.safeAreaLayoutGuide.trailingAnchor constant:-10],
-                [downloadButton.widthAnchor constraintEqualToConstant:30],
-                [downloadButton.heightAnchor constraintEqualToConstant:30],
-            ]];
-        } else {
-            [NSLayoutConstraint activateConstraints:@[
-                [downloadButton.topAnchor constraintEqualToAnchor:self.contentView.safeAreaLayoutGuide.topAnchor constant:95],
-                [downloadButton.trailingAnchor constraintEqualToAnchor:self.contentView.safeAreaLayoutGuide.trailingAnchor constant:-10],
-                [downloadButton.widthAnchor constraintEqualToConstant:30],
-                [downloadButton.heightAnchor constraintEqualToConstant:30],
+                [downloadButton.widthAnchor constraintEqualToConstant:35],
+                [downloadButton.heightAnchor constraintEqualToConstant:35],
             ]];
         }
     }
+    
+    // بناء القائمة ديناميكياً في كل مرة يظهر فيها الزر ليتوافق مع المنشور الحالي
+    if (@available(iOS 14.0, *)) {
+        downloadButton.menu = [self bh_buildDownloadMenu];
+    }
 }
 
+// الدالة الهندسية المسؤولة عن بناء خيارات القائمة حسب نوع المنشور (صور أو فيديو)
+%new - (UIMenu *)bh_buildDownloadMenu {
+    // 1. جلب الموديل الأساسي للمنشور
+    id videoModel = [self respondsToSelector:@selector(model)] ? [self valueForKey:@"model"] : [self valueForKey:@"aweme"];
+    
+    // 2. فحص نوع المنشور (هل يحتوي على ألبوم صور؟)
+    BOOL isPhotoAlbum = NO;
+    if ([videoModel respondsToSelector:@selector(imageAlbumModel)] && [videoModel valueForKey:@"imageAlbumModel"] != nil) {
+        isPhotoAlbum = YES;
+    }
+
+    NSMutableArray *actions = [NSMutableArray array];
+
+    // 3. بناء الخيارات بناءً على النوع
+    if (isPhotoAlbum) {
+        // خيارات الصور
+        UIAction *downloadCurrentPhoto = [UIAction actionWithTitle:@"Download this photo" image:[UIImage systemImageNamed:@"photo"] identifier:nil handler:^(__kindof UIAction * _Nonnull action) {
+            [self bh_downloadCurrentPhotoAction]; // سنقوم ببرمجة هذه الدالة في الخطوة القادمة
+        }];
+        [actions addObject:downloadCurrentPhoto];
+
+        UIAction *downloadAllPhotos = [UIAction actionWithTitle:@"Download all photos" image:[UIImage systemImageNamed:@"photo.on.rectangle"] identifier:nil handler:^(__kindof UIAction * _Nonnull action) {
+            [self bh_downloadAllPhotosAction]; // سنقوم ببرمجة هذه الدالة في الخطوة القادمة
+        }];
+        [actions addObject:downloadAllPhotos];
+    } else {
+        // خيارات الفيديو
+        UIAction *downloadVideo = [UIAction actionWithTitle:@"Download video" image:[UIImage systemImageNamed:@"video"] identifier:nil handler:^(__kindof UIAction * _Nonnull action) {
+            [self bh_downloadVideoAction]; // دالة التحميل التي سنطورها لاحقاً لتدعم الدائرة
+        }];
+        [actions addObject:downloadVideo];
+    }
+
+    // 4. الخيارات المشتركة (تظهر في كلا الحالتين)
+    UIAction *downloadMusic = [UIAction actionWithTitle:@"Download music" image:[UIImage systemImageNamed:@"music.note"] identifier:nil handler:^(__kindof UIAction * _Nonnull action) {
+        // سيتم ربطها لاحقاً بدالة تحميل الصوت
+    }];
+    [actions addObject:downloadMusic];
+
+    UIAction *copyDesc = [UIAction actionWithTitle:@"Copy description" image:[UIImage systemImageNamed:@"doc.on.doc"] identifier:nil handler:^(__kindof UIAction * _Nonnull action) {
+        // سيتم ربطها لاحقاً بدالة نسخ الوصف الحقيقي
+    }];
+    [actions addObject:copyDesc];
+
+    // تجميع الخيارات في قائمة واحدة أنيقة
+    return [UIMenu menuWithTitle:@"BHTikTok" children:actions];
+}
 
 %new - (void)downloaderProgress:(float)progress {
     self.hud.detailTextLabel.text = [BHIManager getDownloadingPersent:progress];
