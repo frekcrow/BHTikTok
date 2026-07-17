@@ -551,52 +551,18 @@ static BOOL isAuthenticationShowed = FALSE;
 }
 
 %new - (UIMenu *)bh_buildDownloadMenu {
-    id videoModel = [self respondsToSelector:@selector(model)] ? [self valueForKey:@"model"] : [self valueForKey:@"aweme"];
+    if (![self.viewController isKindOfClass:%c(TTKStoryDetailContainerViewController)]) return nil;
+    id rootVC = self.viewController;
     
-    BOOL isPhotoAlbum = NO;
-    if ([videoModel respondsToSelector:@selector(imageAlbumModel)] && [videoModel valueForKey:@"imageAlbumModel"] != nil) {
-        isPhotoAlbum = YES;
-    }
-
+    // استخدام valueForKeyPath لتخطي خطأ المترجم
+    AWEAwemeModel *videoModel = [rootVC valueForKeyPath:@"model.currentPlayingStory"];
+    
     NSMutableArray *actions = [NSMutableArray array];
 
-    if (isPhotoAlbum) {
-        UIAction *downloadCurrentPhoto = [UIAction actionWithTitle:@"Download this photo" image:[UIImage systemImageNamed:@"photo"] identifier:nil handler:^(__kindof UIAction * _Nonnull action) {
-            [self bh_downloadCurrentPhotoAction]; 
-        }];
-        [actions addObject:downloadCurrentPhoto];
-
-        UIAction *downloadAllPhotos = [UIAction actionWithTitle:@"Download all photos" image:[UIImage systemImageNamed:@"photo.on.rectangle"] identifier:nil handler:^(__kindof UIAction * _Nonnull action) {
-            [self bh_downloadAllPhotosAction]; 
-        }];
-        [actions addObject:downloadAllPhotos];
-    } else {
-        UIAction *downloadVideo = [UIAction actionWithTitle:@"Download video" image:[UIImage systemImageNamed:@"video"] identifier:nil handler:^(__kindof UIAction * _Nonnull action) {
-            [self bh_downloadVideoAction]; 
-        }];
-        [actions addObject:downloadVideo];
-    }
-
-    UIAction *downloadMusic = [UIAction actionWithTitle:@"Download music" image:[UIImage systemImageNamed:@"music.note"] identifier:nil handler:^(__kindof UIAction * _Nonnull action) {
-        NSURL *downloadableURL = [((AWEMusicModel *)[videoModel music]).playURL bestURLtoDownload];
-        self.fileextension = [((AWEMusicModel *)[videoModel music]).playURL bestURLtoDownloadFormat];
-        if (downloadableURL) {
-            self.downloadManager = [[BHDownload alloc] init];
-            [self.downloadManager downloadFileWithURL:downloadableURL];
-            [self.downloadManager setDelegate:self];
-            
-            if (!self.progressCircle) {
-                self.progressCircle = [[BHTikTokProgressView alloc] initWithFrame:CGRectMake(0, 0, 50, 50)];
-                self.progressCircle.center = self.contentView.center;
-            }
-            self.progressCircle.progressLayer.hidden = NO;
-            self.progressCircle.statusImageView.hidden = YES;
-            [self.progressCircle updateProgress:0.0];
-            [self.contentView addSubview:self.progressCircle];
-            [self.contentView bringSubviewToFront:self.progressCircle];
-        }
+    UIAction *downloadVideo = [UIAction actionWithTitle:@"Download video" image:[UIImage systemImageNamed:@"video"] identifier:nil handler:^(__kindof UIAction * _Nonnull action) {
+        [self bh_downloadVideoAction]; 
     }];
-    [actions addObject:downloadMusic];
+    [actions addObject:downloadVideo];
 
     UIAction *copyDesc = [UIAction actionWithTitle:@"Copy description" image:[UIImage systemImageNamed:@"doc.on.doc"] identifier:nil handler:^(__kindof UIAction * _Nonnull action) {
         NSString *video_description = [videoModel music_songName] ?: @"BHTikTok Options";
@@ -604,15 +570,6 @@ static BOOL isAuthenticationShowed = FALSE;
         pasteboard.string = video_description;
     }];
     [actions addObject:copyDesc];
-    
-    UIAction *copyVideoLink = [UIAction actionWithTitle:@"Copy video link" image:[UIImage systemImageNamed:@"link"] identifier:nil handler:^(__kindof UIAction * _Nonnull action) {
-        NSURL *downloadableURL = [[videoModel video].playURL bestURLtoDownload];
-        if (downloadableURL) {
-            UIPasteboard *pasteboard = [UIPasteboard generalPasteboard];
-            pasteboard.string = [downloadableURL absoluteString];
-        }
-    }];
-    [actions addObject:copyVideoLink];
 
     return [UIMenu menuWithTitle:@"BHTikTok" children:actions];
 }
@@ -1000,8 +957,11 @@ static BOOL isAuthenticationShowed = FALSE;
 %new - (void)bh_downloadVideoAction {
     if (![self.viewController isKindOfClass:%c(TTKStoryDetailContainerViewController)]) return;
     id rootVC = self.viewController;
-    NSURL *downloadableURL = [[rootVC model].currentPlayingStory.video.playURL bestURLtoDownload];
-    self.fileextension = [[rootVC model].currentPlayingStory.video.playURL bestURLtoDownloadFormat];
+    
+    // استخدام valueForKeyPath لتخطي خطأ المترجم
+    AWEAwemeModel *storyModel = [rootVC valueForKeyPath:@"model.currentPlayingStory"];
+    NSURL *downloadableURL = [storyModel.video.playURL bestURLtoDownload];
+    self.fileextension = [storyModel.video.playURL bestURLtoDownloadFormat];
     
     if (downloadableURL) {
         self.downloadManager = [[BHDownload alloc] init];
