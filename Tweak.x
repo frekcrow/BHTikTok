@@ -38,6 +38,27 @@
 - (void)_onTouchUpInside; // <-- هذا هو السطر الذي سيحل المشكلة
 @end
 
+@interface AWEFeedViewCell : UITableViewCell
+- (void)addDownloadButton;
+- (void)bh_downloadVideoAction;
+- (void)addHideElementButton;
+- (void)addHandleLongPress;
+@end
+
+@interface AWEAwemeDetailTableViewCell : UITableViewCell
+- (void)addDownloadButton;
+- (void)bh_downloadVideoAction;
+- (void)addHideElementButton;
+- (void)addHandleLongPress;
+@end
+
+@interface TTKStoryDetailTableViewCell : UITableViewCell
+- (void)addDownloadButton;
+- (void)bh_downloadVideoAction;
+- (void)addHideElementButton;
+- (void)addHandleLongPress;
+@end
+
 NSArray *jailbreakPaths;
 
 static void showConfirmation(void (^okHandler)(void)) {
@@ -632,25 +653,6 @@ static BOOL isAuthenticationShowed = FALSE;
     }
 }
 
-%new - (void)hideElementButtonHandler:(UIButton *)sender {
-    if ([self.viewController isKindOfClass:%c(AWENewFeedTableViewController)]) {
-        id rootVC = self.viewController;
-        if ([rootVC respondsToSelector:@selector(interactionController)]) {
-            id interactionController = [rootVC valueForKey:@"interactionController"];
-            if ([interactionController isKindOfClass:%c(TTKFeedInteractionLegacyMainContainerElement)]) {
-                if (self.elementsHidden) {
-                    self.elementsHidden = false;
-                    [interactionController hideAllElements:false exceptArray:nil];
-                    [sender setImage:[UIImage systemImageNamed:@"eye.slash.fill"] forState:UIControlStateNormal];
-                } else {
-                    self.elementsHidden = true;
-                    [interactionController hideAllElements:true exceptArray:nil];
-                    [sender setImage:[UIImage systemImageNamed:@"eye.fill"] forState:UIControlStateNormal];
-                }
-            }
-        }
-    }
-}
 
 %new - (void)downloaderProgress:(float)progress {
     self.hud.detailTextLabel.text = [BHIManager getDownloadingPersent:progress];
