@@ -1,3 +1,4 @@
+
 #import "TikTokHeaders.h"
 #import <UIKit/UIKit.h>
 #import <Foundation/Foundation.h>
@@ -753,6 +754,13 @@ static BOOL isAuthenticationShowed = NO;
 @interface AWEFeedViewCell (BHTikTok)
 - (UIViewController *)viewController;
 - (UIViewController *)bh_getPhotoAlbumViewController;
+- (AWEAwemeModel *)bh_currentAwemeModel;
+- (NSURL *)bh_urlForAlbumItem:(id)item;
+- (NSArray *)bh_currentAlbumItems;
+- (void)bh_downloadCurrentPhotoAction;
+- (void)bh_downloadAllPhotosAction;
+- (void)bh_downloadVideoAction;
+- (void)bh_refreshOverlayButtons;
 @end
 
 %hook AWEFeedViewCell
@@ -878,6 +886,9 @@ static BOOL isAuthenticationShowed = NO;
 
 @interface AWEAwemeDetailTableViewCell (BHTikTok)
 - (UIViewController *)viewController;
+- (AWEAwemeModel *)bh_currentAwemeModel;
+- (void)bh_downloadVideoAction;
+- (void)bh_refreshOverlayButtons;
 @end
 
 %hook AWEAwemeDetailTableViewCell
@@ -923,6 +934,9 @@ static BOOL isAuthenticationShowed = NO;
 
 @interface TTKStoryDetailTableViewCell (BHTikTok)
 - (UIViewController *)viewController;
+- (AWEAwemeModel *)bh_currentAwemeModel;
+- (void)bh_downloadVideoAction;
+- (void)bh_refreshOverlayButtons;
 @end
 
 %hook TTKStoryDetailTableViewCell
